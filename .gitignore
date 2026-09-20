@@ -1,0 +1,11 @@
+# Haskell
+*.o
+*.hi
+*.dyn_o
+*.dyn_hi
+*.exe
+
+# Sistema Operativo y Editores
+.DS_Store
+Thumbs.db
+.vscode/
