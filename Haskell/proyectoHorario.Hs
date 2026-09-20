@@ -29,7 +29,9 @@ data Curso = Curso
    =================================================== -}
 
 -- Determina si dos horarios se sobreponen en el mismo dia y en el mismo rango de horas
-seCruzan :: Horario -> Horario -> Bool
+seCruzan :: Horario -> Horario -> Bool        --Toma 2 parametros de tipo horario, y devuelve un tipo Bool (True o False)
+
+--Bloque que determina mediante condicionales si una clase se cruza con otra (Si se superponen devuelve True, y sino, devuelve False)
 seCruzan h1 h2 = (dia h1 == dia h2)
             && (horaInicio h1 < horaFin h2)
             && (horaInicio h2 < horaFin h1)
