@@ -35,3 +35,15 @@ seCruzan :: Horario -> Horario -> Bool        --Toma 2 parametros de tipo horari
 seCruzan h1 h2 = (dia h1 == dia h2)
             && (horaInicio h1 < horaFin h2)
             && (horaInicio h2 < horaFin h1)
+
+--Funcion auxiliar que recibe un curso y una lista de cursos, y determina si ese curso choca con alguno de la lista.
+cruzaConAlguno :: Curso -> [Curso] -> Bool
+cruzaConAlguno _ [] = False              --Verifica resultado con una lista vacia
+cruzaConAlguno c (x:xs) = seCruzan (horario c) (horario x) || cruzaConAlguno c xs  {- Verifica si el horario del curso c se cruza con el horario del primer curso de la lista (x),
+ y si no, llama recursivamente a la funcion con el resto de la lista (xs) -}
+
+--Funcion principal que determina si una lista de cursos tiene algun choque de horarios entre ellos
+horarioValido :: [Curso] -> Bool
+horarioValido [] = True                                               --Caso base: una lista vacia de cursos es valida
+horarioValido (c:cs) = not (cruzaConAlguno c cs) && horarioValido cs  {- Verifica si el primer curso de la lista (c) choca con alguno de los cursos restantes (cs) y si no,
+ llama recursivamente a la funcion con el resto de la lista (cs) -}
