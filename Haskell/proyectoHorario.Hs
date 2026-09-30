@@ -61,6 +61,13 @@ totalCreditos (c:cs) = creditos c + totalCreditos cs
 combinaciones :: [Curso] -> [[Curso]]
 combinaciones [] = [[]]
 
+{- Genera las combinaciones que no incluyen el primer curso
+y las combinaciones que si lo incluyen. -}
+combinaciones (c:cs) =
+    let combinacionesSinC = combinaciones cs
+        combinacionesConC = agregarATodas c combinacionesSinC
+    in combinacionesSinC ++ combinacionesConC
+
 --Funcion auxiliar que agrega un curso a todas las combinaciones
 agregarATodas :: Curso -> [[Curso]] -> [[Curso]]
 agregarATodas _ [] = []                          -- Si no quedan combinaciones por procesar, devolvemos una lista vacia
