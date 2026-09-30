@@ -47,3 +47,22 @@ horarioValido :: [Curso] -> Bool
 horarioValido [] = True                                               --Caso base: una lista vacia de cursos es valida
 horarioValido (c:cs) = not (cruzaConAlguno c cs) && horarioValido cs  {- Verifica si el primer curso de la lista (c) choca con alguno de los cursos restantes (cs) y si no,
  llama recursivamente a la funcion con el resto de la lista (cs) -}
+
+-- Suma recursivamente los creditos de una lista de cursos
+totalCreditos :: [Curso] -> Int
+totalCreditos [] = 0
+totalCreditos (c:cs) = creditos c + totalCreditos cs
+
+{- ===================================================
+   PARTE 3: Combinaciones
+   =================================================== -}
+
+--Aqui recibe una lista de cursos y entrega una lista de una lista de cursos, en donde cada lista interior representa una posible combinacion
+combinaciones :: [Curso] -> [[Curso]]
+combinaciones [] = [[]]
+
+--Funcion auxiliar que agrega un curso a todas las combinaciones
+agregarATodas :: Curso -> [[Curso]] -> [[Curso]]
+agregarATodas _ [] = []                          -- Si no quedan combinaciones por procesar, devolvemos una lista vacia
+agregarATodas c (combinacion:resto) =            -- "combinacion" es la primer combinacion de la lista, de tipo [Curso]
+    (c : combinacion) : agregarATodas c resto    -- El primer ":" agrega c a la combinacion actual; el segundo ":" agrega esa combinacion modificada al resultado
