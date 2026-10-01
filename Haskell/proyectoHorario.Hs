@@ -73,3 +73,31 @@ agregarATodas :: Curso -> [[Curso]] -> [[Curso]]
 agregarATodas _ [] = []                          -- Si no quedan combinaciones por procesar, devolvemos una lista vacia
 agregarATodas c (combinacion:resto) =            -- "combinacion" es la primer combinacion de la lista, de tipo [Curso]
     (c : combinacion) : agregarATodas c resto    -- El primer ":" agrega c a la combinacion actual; el segundo ":" agrega esa combinacion modificada al resultado
+
+-- Genera todas las combinaciones del catalogo y se queda solamente las opciones validas
+opcionesValidas :: [Curso] -> Int -> Int -> [([Curso], Int)]
+opcionesValidas catalogo minimo maximo =
+    filtrarOpciones (combinaciones catalogo) minimo maximo
+
+-- Recorre una lista de combinaciones y conserva unicamente las que tienen un horario valido y cumplen el rango de creditos
+filtrarOpciones :: [[Curso]] -> Int -> Int -> [([Curso], Int)]
+--no quedan combinaciones por revisar
+filtrarOpciones [] _ _ = []
+--revisa la primera opcion y sigue con el resto
+filtrarOpciones (opcion:resto) minimo maximo
+    | esOpcionValida opcion minimo maximo =
+        (opcion, totalCreditos opcion)
+        : filtrarOpciones resto minimo maximo
+        
+    | otherwise =                            -- Si la combinacion no cumple las condiciones, se descarta y se siguen revisando recursivamente el resto de las opciones
+        filtrarOpciones resto minimo maximo
+
+-- Determina si una combinacion tiene un horario valido y una cantidad de creditos dentro del rango permitido
+esOpcionValida :: [Curso] -> Int -> Int -> Bool
+esOpcionValida cursos minimo maximo =
+    let total = totalCreditos cursos
+    in horarioValido cursos
+       && total >= minimo
+       && total <= maximo
+
+--(opcionesValidas es la funcion principal, y filtrarOpciones y esOpcionValida son las funciones auxiliares utilizadas para su funcionamiento)
