@@ -74,13 +74,10 @@ agregarATodas _ [] = []                          -- Si no quedan combinaciones p
 agregarATodas c (combinacion:resto) =            -- "combinacion" es la primer combinacion de la lista, de tipo [Curso]
     (c : combinacion) : agregarATodas c resto    -- El primer ":" agrega c a la combinacion actual; el segundo ":" agrega esa combinacion modificada al resultado
 
-
-
 {- ===================================================
    PARTE 4: Filtrado de opciones validas
    =================================================== -}
 
-   
 -- Genera todas las combinaciones del catalogo y se queda solamente las opciones validas
 opcionesValidas :: [Curso] -> Int -> Int -> [([Curso], Int)]
 opcionesValidas catalogo minimo maximo =
