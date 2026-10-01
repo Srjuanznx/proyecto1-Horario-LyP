@@ -14,9 +14,7 @@ Esta carpeta implementa la **Parte II del enunciado, secciones 2.1 y 2.2**. Perm
 6. [Recursividad y auxiliares](#6-recursividad-y-auxiliares)
 7. [Decisiones y límites](#7-decisiones-y-límites)
 8. [Pruebas automatizadas](#8-pruebas-automatizadas)
-9. [Guía para la sustentación](#9-guía-para-la-sustentación)
-10. [Aporte de Prolog a la entrega](#10-aporte-de-prolog-a-la-entrega)
-11. [Transparencia sobre IA](#11-transparencia-sobre-ia)
+9. [Lectura del flujo de ejecución](#9-lectura-del-flujo-de-ejecución)
 
 ## 1. Alcance y requisitos
 
@@ -44,7 +42,7 @@ La generación de combinaciones, el rango de créditos, los puntajes de preferen
 | [datos.pl](datos.pl) | Hechos: cursos, créditos, horarios, prerrequisitos, estudiantes e historial. |
 | [proyectoHorario.pl](proyectoHorario.pl) | Ocho predicados públicos y auxiliares recursivos. Carga automáticamente `datos.pl`. |
 | [pruebas.pl](pruebas.pl) | 51 pruebas automatizadas con `plunit`, incluyendo 3.072 planes académicos. |
-| [README.md](README.md) | Documentación de uso, diseño, verificación y entrega de Prolog. |
+| [README.md](README.md) | Documentación de los datos, reglas, flujo de ejecución y pruebas de Prolog. |
 
 ### Requisito
 
@@ -441,81 +439,125 @@ El verificador contrasta el plan con las relaciones básicas; para el límite de
 
 Las pruebas agregan y retiran hechos temporales para simular datos defectuosos. No cambian los archivos de datos.
 
-## 9. Guía para la sustentación
+## 9. Lectura del flujo de ejecución
 
-Orden sugerido para explicar la parte de Prolog:
+Esta sección conecta las reglas con el estado de sus argumentos. Los fragmentos son extractos de `proyectoHorario.pl`.
 
-1. **Modelo:** mostrar los cinco tipos de hechos y explicar el sentido de `prerequisito(Curso, Requisito)`.
-2. **Elegibilidad:** ejecutar `puede_tomar(juan, calculo2)` y contrastarlo con Ana; seguir el caso base y recursivo de `requisitos_aprobados/2`.
-3. **Horarios:** explicar las dos desigualdades de cruce y demostrar que terminar a las 9 y empezar a las 9 es compatible.
-4. **Listas:** mostrar cómo se compara cada curso con la cola, cómo se suman créditos y cómo se filtra el catálogo.
-5. **Dependencias:** seguir la cadena de Cálculo 3 y explicar por qué su semestre mínimo es 3.
-6. **Planificación:** ejecutar la ruta de Ana hacia Proyecto; explicar pendientes, completados y ocupados.
-7. **Casos límite y pruebas:** mostrar un conflicto, una materia desconocida y la ejecución de las pruebas.
+### 9.1 Verificar una lista de prerrequisitos
 
-Preguntas que debes poder responder:
+```prolog
+requisitos_aprobados(_, []).
+requisitos_aprobados(Estudiante, [Pre|Resto]) :-
+    aprobado(Estudiante, Pre),
+    requisitos_aprobados(Estudiante, Resto).
+```
 
-- ¿Por qué `puede_tomar` puede aceptar una materia aprobada?
-- ¿Por qué las materias de `cursos_disponibles` pueden cruzarse entre sí?
-- ¿Qué diferencia hay entre prerrequisitos directos y transitivos?
-- ¿Por qué visitados guarda la rama actual y no todos los cursos recorridos?
-- ¿Cómo se evita cursar una materia y su prerrequisito en el mismo semestre?
-- ¿Por qué cambiar el orden de los objetivos puede cambiar la ruta?
-- ¿Por qué la ruta de Luisa mantiene el semestre 3 para Cálculo 3?
-- ¿Dónde están los casos base y qué lista o conjunto de pendientes reduce cada recursión?
+Para `puede_tomar(juan, calculo2)`, primero se recoge `[calculo1, algebra]`. La regla comprueba `aprobado(juan, calculo1)` y continúa con `[algebra]`; después comprueba Álgebra y llega a `[]`. El caso base permite terminar con éxito. Si falta una aprobación, la conjunción falla.
 
-## 10. Aporte de Prolog a la entrega
+`_` en el caso base indica que, una vez vacía la lista, no hace falta consultar nuevamente al estudiante. El registro del estudiante ya fue comprobado por `puede_tomar/2`.
 
-Según el PDF suministrado, la entrega es el **2 de octubre de 2026 a las 23:59 por EAFIT Interactiva**. El proyecto se realiza en parejas y vale el 20 % del curso.
+### 9.2 Incluir o descartar un curso
 
-### Evaluación del proyecto completo
+```prolog
+filtrar_disponibles([], _, []).
+filtrar_disponibles([Curso|Resto], Estudiante, Disponibles) :-
+    ( puede_tomar(Estudiante, Curso), \+ aprobado(Estudiante, Curso)
+    -> Disponibles = [Curso|Cola]
+    ;  Disponibles = Cola
+    ),
+    filtrar_disponibles(Resto, Estudiante, Cola).
+```
 
-| Criterio | Peso |
+La condición combina dos objetivos: cumplir los prerrequisitos y no tener la materia aprobada. Si ambos se cumplen, se construye una lista cuya cabeza es `Curso`; en caso contrario, el resultado es directamente `Cola`. En ambas ramas, la llamada final procesa los cursos restantes y completa esa cola.
+
+No se modifica el catálogo ni se registra una matrícula: se construye el argumento de salida mediante unificación.
+
+### 9.3 Diferenciar la cadena y el semestre mínimo
+
+Para Cálculo 3 se recorren estas dependencias:
+
+```text
+calculo3
+└── calculo2
+    ├── calculo1
+    └── algebra
+```
+
+En `cadena_prerequisitos/2`, el objetivo es reunir códigos: primero Cálculo 2 y luego sus ancestros, dando `[calculo2, calculo1, algebra]`.
+
+En `semestre_minimo/2`, el objetivo es calcular números: Cálculo 1 y Álgebra dan 1; Cálculo 2 da `1 + max(1, 1) = 2`; Cálculo 3 da `1 + 2 = 3`. Aquí `max` es notación explicativa: el código realiza la comparación recursivamente con `maximo_semestre/3`.
+
+### 9.4 Preparar los pendientes de una ruta
+
+```prolog
+ruta_academica(Estudiante, Cursos, Ruta) :-
+    estudiante(Estudiante),
+    objetivos_pendientes(Cursos, Estudiante, Necesarios),
+    sin_repetidos(Necesarios, Unicos),
+    quitar_aprobados(Unicos, Estudiante, Pendientes),
+    validar_horarios(Pendientes),
+    findall(Curso, aprobado(Estudiante, Curso), Aprobados),
+    planificar(Pendientes, Aprobados, 1, Ruta).
+```
+
+Con Ana y el objetivo `[proyecto]`, los pendientes quedan en este orden:
+
+```prolog
+[proyecto, calculo3, calculo2, calculo1, algebra,
+ estructuras, programacion2, programacion1]
+```
+
+Ana tiene `Aprobados = []`. La lista de pendientes no está ordenada por semestre: el selector la recorre y decide cuáles puede elegir según las condiciones del semestre actual.
+
+### 9.5 Entender los seis argumentos del selector
+
+```prolog
+seleccionar_semestre(PendientesEntrada, Completados, Semestre,
+                     Ocupados, Elegidos, PendientesSalida)
+```
+
+Los nombres anteriores describen los papeles de los argumentos; la implementación usa patrones de cabeza y cola para procesarlos.
+
+| Argumento | Papel |
 | --- | --- |
-| Corrección funcional | 30 % |
-| Enlace a video que explique código y funcionalidad | 50 % |
-| Informe técnico | 20 % |
+| Pendientes de entrada | Cursos que aún se deben ubicar. |
+| Completados | Historial más cursos de semestres anteriores; permanece fijo durante esta selección. |
+| Semestre | Número del semestre que se está construyendo. |
+| Ocupados | Cursos ya elegidos en este recorrido; se usa para detectar cruces. |
+| Elegidos | Lista de salida con los cursos seleccionados para este semestre. |
+| Pendientes de salida | Lista de salida con los cursos aplazados. |
 
-El docente puede llamar a cualquier estudiante a una sustentación presencial.
+La condición de selección es:
 
-### Material que debe aportar el responsable de Prolog
+```prolog
+habilitado_en(Curso, Completados, Semestre),
+sin_cruces(Curso, Ocupados)
+```
 
-- [ ] Código de Prolog: `datos.pl` y `proyectoHorario.pl`; acompañarlo con `pruebas.pl` y esta guía para facilitar la reproducción.
-- [ ] Documentación de hechos, reglas, argumentos y auxiliares recursivos para el informe.
-- [ ] Ejemplos funcionales de los ocho requisitos y sus resultados.
-- [ ] Explicación del diseño de la ruta, detección de cruces y manejo de prerrequisitos.
-- [ ] Demostración y explicación de Prolog en el video conjunto.
-- [ ] Problemas abordados, soluciones y declaración concreta del uso de IA.
+Si se cumple, el curso se añade a elegidos y ocupados. Si falla, se conserva en pendientes. Cada rama continúa con el resto de la lista.
 
-### Requisitos del informe PDF conjunto
+### 9.6 Avanzar al siguiente semestre
 
-El enunciado pide:
+En la primera selección de Ana, Proyecto, Cálculo 3 y Cálculo 2 se aplazan; se eligen Cálculo 1 y Álgebra. Estructuras y Programación 2 también se aplazan, y se elige Programación 1.
 
-1. Nombres completos, identificaciones y correos de los estudiantes.
-2. Enlace al video de sustentación.
-3. Documentación de funciones, hechos y reglas.
-4. Ejemplos funcionales de ejecución de cada ítem solicitado.
-5. Tabla de problemas principales y soluciones, indicando dónde y cómo se utilizó IA.
-6. Al menos tres conclusiones y una comparación breve entre paradigmas.
+Aunque Cálculo 1 y Álgebra ya hayan sido elegidos, no cuentan como completados durante ese mismo semestre. Esta separación impide aprobar un prerrequisito y cursar su dependiente simultáneamente.
 
-Este README aporta la documentación de Prolog. El informe PDF, los datos personales y el enlace al video deben completarse como entregables conjuntos; la documentación de Haskell corresponde a su sección.
+Después, `planificar/4` ejecuta:
 
-Para la comparación: Haskell expresa el problema mediante funciones que transforman datos, generan combinaciones y calculan rankings; Prolog lo expresa mediante hechos y reglas que permiten demostrar relaciones y obtener soluciones por unificación y búsqueda. En este proyecto ambos deben mostrar recursividad explícita.
+```prolog
+Siguiente is Semestre + 1,
+concatenar(Elegidos, Completados, NuevosCompletados)
+```
 
-## 11. Transparencia sobre IA
+La llamada recursiva usa los pendientes que quedaron, los nuevos completados y el siguiente número. En el caso de Ana:
 
-La implementación de Prolog, los datos de ejemplo, las pruebas y esta documentación se prepararon con asistencia de **OpenAI Codex**. La actualización de esta guía se realizó contrastando el PDF del enunciado con los archivos del repositorio. Las pruebas automatizadas se ejecutaron en SWI-Prolog.
+| Estado al terminar la selección | Elegidos | Pendientes para continuar |
+| --- | --- | --- |
+| Semestre 1 | `[calculo1, algebra, programacion1]` | `[proyecto, calculo3, calculo2, estructuras, programacion2]` |
+| Semestre 2 | `[calculo2, programacion2]` | `[proyecto, calculo3, estructuras]` |
+| Semestre 3 | `[calculo3, estructuras]` | `[proyecto]` |
+| Semestre 4 | `[proyecto]` | `[]` |
 
-Los estudiantes deben revisar y comprender la solución y describir en el informe el uso real de la herramienta. No se deben presentar pruebas automatizadas como sustituto de la comprensión del código.
+Al alcanzar `planificar([], _, _, [])`, no quedan cursos y termina la construcción. Si un semestre no tiene elegidos, se avanza el número sin agregar un término vacío a la ruta.
 
-La siguiente tabla resume problemas técnicos abordados en la solución; puede servir de base para la tabla del informe, ajustándola a la experiencia real del equipo:
-
-| Problema abordado | Solución implementada |
-| --- | --- |
-| Representar estudiantes sin materias aprobadas | Registro explícito con `estudiante/1`. |
-| Exigir todos los prerrequisitos | Verificación recursiva con `requisitos_aprobados/2`. |
-| Detectar conflictos entre cualquier par | Comparación cabeza-cola mediante `sin_cruces/2`. |
-| Evitar duplicados y distinguir ciclos de ancestros compartidos | Lista de vistos para duplicados y lista de visitados de la rama para ciclos. |
-| Evitar prerrequisitos simultáneos | Mantener completados fijo durante la selección de un semestre. |
-| Resolver conflictos en la ruta | Aplazar el curso que entra en conflicto según el orden de pendientes. |
-| Comprobar múltiples objetivos e historiales | Pruebas específicas y revisión de 3.072 rutas del catálogo. |
+`NuevosCompletados` es una lista local de la consulta. El plan propuesto **no agrega hechos `aprobado/2` a la base**: representa lo que se consideraría completado al avanzar dentro del plan.
