@@ -612,18 +612,4 @@ Todo el código y la documentación deben ser comprendidos y sustentados por los
 
 ## 14. Conclusiones de Haskell
 
-1. La recursión permite procesar listas y resolver problemas de búsqueda, filtrado, acumulación y ordenamiento sin depender de ciclos o variables mutables.
-
-2. El sistema de tipos de Haskell facilita la detección temprana de errores. Por ejemplo, permitió identificar la diferencia entre una lista de cursos y el valor entero producido por la suma de sus créditos.
-
-3. Dividir el sistema en funciones pequeñas facilitó el desarrollo y las pruebas. La generación de combinaciones, validación de horarios, puntuación y clasificación pudieron verificarse de forma independiente.
-
-4. El reconocimiento de patrones permitió representar de manera clara los casos base y recursivos de las listas, especialmente mediante las formas `[]` y `(x:xs)`.
-
-5. La generación de combinaciones tiene un crecimiento exponencial de `2^n`. Aunque esto limita su aplicación con catálogos grandes, resulta adecuado para el alcance académico y los datos utilizados en la práctica.
-
-6. El ordenamiento por inserción demostró que es posible construir un algoritmo de clasificación desde cero utilizando recursión. Aunque no es el método más eficiente para listas grandes, cumple las restricciones del proyecto y facilita la comprensión del proceso.
-
-7. La separación entre `ProyectoHorario.hs` y `Main.hs` permitió mantener la lógica funcional independiente de los datos, las pruebas y la presentación de resultados.
-
-8. Las pruebas automáticas y la prueba de integración permitieron comprobar que las funciones trabajan correctamente de forma individual y también como parte del flujo completo.
+El desarrollo de esta parte del proyecto permitió comprender cómo utilizar la recursión para recorrer listas, sumar créditos, generar combinaciones, validar horarios y ordenar resultados sin depender de las funciones  ya predefinidas. Las pruebas nos ayudaron a encontrar errores y confirmar que cada función daba el resultado esperado. Asimismo, dividir el código entre lo funcional y las pruebas mediante las cuales este se va a alimentar, conviene ser usado, para de ese modo evitar abrumar juntando todo en un solo codigo y tener un orden mejor definido. Aunque generar todas las combinaciones puede ser lento cuando existen muchos cursos, esta solución funciona bien para el catálogo utilizado. De igual modo, con este proyecto aprendimos que Haskell permite resolver problemas usando funciones y recursión en lugar de ciclos. También entendimos mejor cómo trabajar con listas, cursos, horarios y diferentes tipos de datos. Y aprendimos que aunque Haskell puede parecer un lenguaje arcaico y limitado, mediante su uso se pueden lograr cosas que están al nivel o incluso superiores a los lenguajes más comerciales y de mayor uso. 
