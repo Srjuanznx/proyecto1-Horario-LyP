@@ -1,4 +1,3 @@
-# proyecto1-Horario-LyP
 # Práctica 1 — Programación Funcional y Lógica
 
 ## Información académica
