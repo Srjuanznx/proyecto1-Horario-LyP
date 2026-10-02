@@ -37,3 +37,12 @@ Archivos principales:
 - [`ProyectoHorario.hs`](./Haskell/ProyectoHorario.hs): tipos de datos y funciones requeridas.
 - [`Main.hs`](./Haskell/Main.hs): catálogo académico, prioridades, pruebas funcionales y ejemplos de ejecución.
 
+### 2. Código fuente de Prolog
+
+La implementación funcional se encuentra en la carpeta [`Prolog`](./Prolog/).
+
+Archivos principales:
+
+- [`ProyectoHorario.hs`](./Haskell/ProyectoHorario.hs): tipos de datos y funciones requeridas.
+- [`Main.hs`](./Haskell/Main.hs): catálogo académico, prioridades, pruebas funcionales y ejemplos de ejecución.
+
