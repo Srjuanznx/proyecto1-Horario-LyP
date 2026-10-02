@@ -49,3 +49,7 @@ Archivos principales:
 - [`proyectoHorario.pl`](./Prolog/proyectoHorario.pl): implementación de los sistemas expertos de matrícula y generación de rutas académicas.
 - [`pruebas.pl`](./Prolog/pruebas.pl): consultas y casos de prueba utilizados para verificar el funcionamiento de los predicados.
 
+### 3. Videos de sustentación: 
+- Link Haskell:
+- Link Prolog: 
+
