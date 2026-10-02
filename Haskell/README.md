@@ -204,3 +204,199 @@ Los horarios fueron seleccionados para incluir diferentes casos de prueba:
 - Lenguajes formales y Política se superponen.
 - Sistemas de gestión de datos y Talento I se ofrecen en días diferentes a los demás cursos.
 - Talento I permite comprobar el manejo de una asignatura con cero créditos.
+
+## 8. Documentación de funciones
+
+### 8.1. Función `seCruzan`
+
+```haskell
+seCruzan :: Horario -> Horario -> Bool
+seCruzan h1 h2 =
+    (dia h1 == dia h2)
+    && (horaInicio h1 < horaFin h2)
+    && (horaInicio h2 < horaFin h1)
+```
+
+#### Propósito
+
+Determinar si dos horarios ocurren el mismo día y presentan una superposición en sus intervalos de tiempo.
+
+#### Parámetros
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `h1` | `Horario` | Primer horario que se desea comparar. |
+| `h2` | `Horario` | Segundo horario que se desea comparar. |
+
+#### Retorno
+
+Devuelve un valor de tipo `Bool`:
+
+- `True` si los horarios se superponen.
+- `False` si ocurren en días diferentes o no comparten un intervalo de tiempo.
+
+#### Funcionamiento
+
+La función comprueba tres condiciones:
+
+1. Los horarios deben ocurrir el mismo día.
+2. El primer horario debe comenzar antes de que termine el segundo.
+3. El segundo horario debe comenzar antes de que termine el primero.
+
+Las comparaciones de horas utilizan el operador estricto `<`. Por este motivo, dos clases consecutivas no se consideran conflictivas.
+
+Por ejemplo:
+
+```haskell
+Horario "Lunes" 7.0 9.0
+Horario "Lunes" 9.0 11.0
+```
+
+Estos horarios no se cruzan porque el segundo comienza exactamente cuando termina el primero.
+
+---
+
+### 8.2. Función `cruzaConAlguno`
+
+```haskell
+cruzaConAlguno :: Curso -> [Curso] -> Bool
+cruzaConAlguno _ [] = False
+
+cruzaConAlguno c (x:xs) =
+    seCruzan (horario c) (horario x)
+    || cruzaConAlguno c xs
+```
+
+#### Propósito
+
+Determinar si un curso presenta un conflicto de horario con al menos uno de los cursos de una lista.
+
+#### Parámetros
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `c` | `Curso` | Curso cuyo horario se desea comprobar. |
+| `(x:xs)` | `[Curso]` | Lista de cursos con los que será comparado. |
+
+#### Retorno
+
+Devuelve:
+
+- `True` si el curso se cruza con alguno de los elementos de la lista.
+- `False` si no se encuentra ningún conflicto.
+
+#### Caso base
+
+```haskell
+cruzaConAlguno _ [] = False
+```
+
+Si la lista está vacía, no existe ningún curso con el cual pueda presentarse un conflicto.
+
+#### Caso recursivo
+
+La función compara el horario de `c` con el horario del primer curso `x`. Si se cruzan, el operador `||` permite devolver `True`. De lo contrario, la búsqueda continúa recursivamente con la cola `xs`.
+
+---
+
+### 8.3. Función `horarioValido`
+
+```haskell
+horarioValido :: [Curso] -> Bool
+horarioValido [] = True
+
+horarioValido (c:cs) =
+    not (cruzaConAlguno c cs)
+    && horarioValido cs
+```
+
+#### Propósito
+
+Comprobar que una lista completa de cursos no contenga conflictos de horario.
+
+#### Parámetro
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `(c:cs)` | `[Curso]` | Lista de cursos que se desea validar. |
+
+#### Retorno
+
+Devuelve:
+
+- `True` cuando ninguna pareja de cursos presenta cruces.
+- `False` cuando se encuentra al menos un conflicto.
+
+#### Caso base
+
+```haskell
+horarioValido [] = True
+```
+
+Una lista vacía es válida porque no contiene cursos que puedan entrar en conflicto. Este caso también permite que una lista con un solo curso sea considerada válida.
+
+#### Caso recursivo
+
+La función realiza dos operaciones:
+
+1. Comprueba que el primer curso `c` no se cruce con ninguno de los cursos restantes `cs`.
+2. Valida recursivamente que los cursos de `cs` tampoco se crucen entre ellos.
+
+Esta estrategia revisa todas las parejas necesarias sin repetir comparaciones. Si existen `n` cursos, el primero se compara con `n - 1`, el segundo con `n - 2` y así sucesivamente.
+
+---
+
+### 8.4. Función `totalCreditos`
+
+```haskell
+totalCreditos :: [Curso] -> Int
+totalCreditos [] = 0
+
+totalCreditos (c:cs) =
+    creditos c + totalCreditos cs
+```
+
+#### Propósito
+
+Calcular la suma total de créditos de una lista de cursos sin utilizar la función predefinida `sum`.
+
+#### Parámetro
+
+| Parámetro | Tipo | Descripción |
+|---|---|---|
+| `(c:cs)` | `[Curso]` | Lista de cursos cuyos créditos serán sumados. |
+
+#### Retorno
+
+Devuelve un valor de tipo `Int` con la cantidad total de créditos.
+
+#### Caso base
+
+```haskell
+totalCreditos [] = 0
+```
+
+Una lista vacía tiene cero créditos.
+
+#### Caso recursivo
+
+La función obtiene los créditos del primer curso mediante:
+
+```haskell
+creditos c
+```
+
+Luego suma ese valor al resultado de calcular recursivamente los créditos de `cs`.
+
+Ejemplo conceptual:
+
+```text
+totalCreditos [CalculoIII, EstructuraDatos, TalentoI]
+
+= 3 + totalCreditos [EstructuraDatos, TalentoI]
+= 3 + 3 + totalCreditos [TalentoI]
+= 3 + 3 + 0 + totalCreditos []
+= 6
+```
+
+Este ejemplo también demuestra que un curso con cero créditos se procesa correctamente.
