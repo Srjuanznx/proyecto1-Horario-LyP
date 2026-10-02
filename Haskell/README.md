@@ -1,31 +1,97 @@
-Parte I — Programación funcional en Haskell
-1. Descripción general
+# Informe técnico — Programación funcional en Haskell
+
+## 1. Descripción general
+
 La primera parte del proyecto consiste en desarrollar, mediante el paradigma de programación funcional, un sistema para generar y clasificar posibles horarios académicos. La implementación se realizó en Haskell utilizando tipos de datos propios, reconocimiento de patrones, funciones puras y recursión explícita.
 
-El sistema recibe un catálogo de cursos que contiene la información de cada asignatura, incluyendo su código, nombre, cantidad de créditos, horario y lista de prerrequisitos. A partir de dicho catálogo, el programa genera todas las combinaciones posibles de cursos y conserva únicamente aquellas que no presentan cruces de horario y cuya cantidad total de créditos se encuentra dentro de un rango establecido.
+El sistema recibe un catálogo de cursos con la información de cada asignatura:
 
-Posteriormente, las combinaciones válidas se clasifican de acuerdo con una lista de prioridades definida por el estudiante. Cada curso recibe un valor numérico que representa el nivel de preferencia del estudiante. El programa calcula el puntaje total de cada combinación, las ordena de mayor a menor y devuelve las mejores alternativas junto con su posición y puntaje.
+- Código.
+- Nombre.
+- Cantidad de créditos.
+- Horario.
+- Lista de prerrequisitos.
 
-La implementación fue dividida en dos archivos. El archivo ProyectoHorario.hs contiene los tipos de datos y las funciones que implementan la lógica principal. El archivo Main.hs contiene el catálogo académico utilizado, las prioridades, las pruebas funcionales y los ejemplos de ejecución.
+A partir del catálogo, el programa genera todas las combinaciones posibles de cursos y conserva únicamente aquellas que:
 
-2. Objetivos
-2.1. Objetivo general
-Desarrollar en Haskell un sistema funcional que permita generar combinaciones de cursos sin conflictos de horario y clasificarlas según las preferencias académicas de un estudiante.
+1. No presentan cruces de horario.
+2. Tienen una cantidad total de créditos dentro del rango solicitado.
 
-2.2. Objetivos específicos
-Representar cursos y horarios mediante tipos de datos definidos por el usuario.
-Determinar si dos horarios se superponen.
-Verificar que una lista completa de cursos no contenga conflictos.
-Calcular recursivamente la cantidad total de créditos de una combinación.
-Generar todas las combinaciones posibles de un catálogo.
-Filtrar las combinaciones según sus horarios y créditos.
-Calcular un puntaje de preferencia para cada combinación.
-Implementar un algoritmo de ordenamiento recursivo sin utilizar sort.
-Obtener las mejores n combinaciones y asignarles una posición dentro del ranking.
-Validar el funcionamiento mediante pruebas unitarias sencillas y una prueba de integración.
-3. Restricciones de implementación
-De acuerdo con los requisitos de la práctica, las funcionalidades principales fueron desarrolladas desde cero mediante recursión explícita. No se utilizaron funciones predefinidas de ordenamiento o agregación como sort, sum o maximum.
+Posteriormente, las combinaciones válidas son clasificadas mediante una lista de prioridades definida por el estudiante. El programa calcula el puntaje de cada combinación, las ordena de mayor a menor y devuelve las mejores alternativas junto con su posición y puntaje.
 
-Tampoco se emplearon algoritmos combinatorios predefinidos ni funciones de orden superior como map, foldr o zip. Cuando fue necesario recorrer una lista, se utilizaron casos base, reconocimiento de patrones y llamadas recursivas.
+## 2. Objetivos
 
-Para ordenar las opciones válidas se implementó el algoritmo de ordenamiento por inserción. La generación de combinaciones se desarrolló mediante la estrategia recursiva de crear, para cada curso, un grupo de combinaciones que lo incluye y otro que no lo incluye.
+### 2.1. Objetivo general
+
+Desarrollar en Haskell un sistema funcional que permita generar combinaciones de cursos sin conflictos de horario y clasificarlas de acuerdo con las preferencias académicas de un estudiante.
+
+### 2.2. Objetivos específicos
+
+- Representar cursos y horarios mediante tipos de datos definidos por el usuario.
+- Determinar si dos horarios se superponen.
+- Verificar que una lista completa de cursos no contenga conflictos.
+- Calcular recursivamente la cantidad total de créditos de una combinación.
+- Generar todas las combinaciones posibles de un catálogo.
+- Filtrar las combinaciones según sus horarios y créditos.
+- Calcular un puntaje de preferencia para cada combinación.
+- Implementar un algoritmo de ordenamiento recursivo sin utilizar `sort`.
+- Obtener las mejores `n` combinaciones y asignarles una posición.
+- Comprobar el funcionamiento mediante pruebas funcionales y una prueba de integración.
+
+## 3. Organización del código
+
+La implementación está dividida en los siguientes archivos:
+
+| Archivo | Descripción |
+|---|---|
+| [`ProyectoHorario.hs`](./ProyectoHorario.hs) | Contiene los tipos de datos y las funciones que implementan la lógica del sistema. |
+| [`Main.hs`](./Main.hs) | Contiene el catálogo académico, las prioridades, las pruebas funcionales y los ejemplos de ejecución. |
+
+La separación entre los archivos permite mantener la lógica principal independiente de los datos utilizados para probarla.
+
+## 4. Restricciones de implementación
+
+Las funcionalidades principales fueron desarrolladas desde cero mediante recursión explícita, de acuerdo con las restricciones establecidas en el enunciado.
+
+No se utilizaron las siguientes funciones predefinidas:
+
+- `sort`
+- `sum`
+- `maximum`
+- `map`
+- `foldr`
+- `zip`
+
+Tampoco se utilizaron algoritmos combinatorios predefinidos.
+
+Para procesar las listas se emplearon:
+
+- Casos base.
+- Reconocimiento de patrones.
+- Llamadas recursivas.
+- Construcción de listas mediante el operador `:`.
+
+Para ordenar las combinaciones se implementó un algoritmo de **ordenamiento por inserción recursivo**. La generación de combinaciones se desarrolló mediante la estrategia de crear, para cada curso:
+
+1. Las combinaciones que no incluyen el curso.
+2. Las combinaciones que sí incluyen el curso.
+
+## 5. Flujo general del programa
+
+```text
+Catálogo de cursos
+        |
+        v
+Generación de combinaciones
+        |
+        v
+Validación de horarios y créditos
+        |
+        v
+Cálculo de puntajes
+        |
+        v
+Ordenamiento por prioridad
+        |
+        v
+Selección de los mejores horarios
