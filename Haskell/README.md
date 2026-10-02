@@ -565,22 +565,19 @@ Durante el desarrollo se presentaron dificultades relacionadas principalmente co
 
 ## 13. Transparencia y uso de inteligencia artificial
 
-Durante el desarrollo se utilizó inteligencia artificial generativa como herramienta de orientación, explicación, revisión y apoyo técnico.
+Durante el desarrollo se utilizó inteligencia artificial como herramienta de orientación, explicación, revisión y apoyo técnico.
 
 ### 13.1. Usos realizados
 
 La inteligencia artificial fue utilizada para:
 
 - Explicar conceptos de Haskell como tipos, listas, tuplas, reconocimiento de patrones y recursión.
-- Dividir los requisitos del proyecto en funciones más pequeñas.
 - Explicar la diferencia entre `Curso`, `[Curso]` y `[[Curso]]`.
-- Proponer firmas y estructuras iniciales para algunas funciones.
 - Completar fragmentos de código cuando los estudiantes lo solicitaron.
 - Explicar el algoritmo recursivo para generar combinaciones.
 - Orientar la implementación del ordenamiento por inserción.
-- Interpretar errores generados por GHC.
+- Interpretar errores generados por GHC cuando los estudiantes no encontraban la solucion.
 - Proponer casos de prueba y datos para validar el sistema.
-- Organizar la separación entre `ProyectoHorario.hs` y `Main.hs`.
 - Mejorar la presentación de los resultados en la terminal.
 - Apoyar la estructura y redacción inicial de la documentación técnica.
 
