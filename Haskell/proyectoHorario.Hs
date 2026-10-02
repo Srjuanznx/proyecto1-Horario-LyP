@@ -105,3 +105,103 @@ esOpcionValida cursos minimo maximo =
        && total <= maximo
 
 --(opcionesValidas es la funcion principal, y filtrarOpciones y esOpcionValida son las funciones auxiliares utilizadas para su funcionamiento)
+
+{- ===================================================
+   PARTE 5: Calcular puntajes por su prioridad
+   =================================================== -}
+
+-- Busca recursivamente la prioridad asociada a un codigo, si el codigo no aparece, devuelve 0
+buscarPrioridad :: String -> [(String, Int)] -> Int
+buscarPrioridad _ [] = 0
+buscarPrioridad codigoBuscado ((codigoActual, prioridad):resto)
+    | codigoBuscado == codigoActual = prioridad
+    | otherwise = buscarPrioridad codigoBuscado resto
+
+-- Calcula recursivamente el puntaje total de una combinacion, sumando la prioridad asignada a cada curso
+puntaje :: [Curso] -> [(String, Int)] -> Int
+puntaje [] _ = 0
+puntaje (curso:resto) prioridades =
+    buscarPrioridad (codigo curso) prioridades
+    + puntaje resto prioridades
+
+{- ===================================================
+   PARTE 6: Ordenamiento
+   =================================================== -}
+
+-- Inserta una opcion en una lista ya ordenada, conservando el orden de mayor a menor puntaje
+insertarPorPuntaje
+    :: ([Curso], Int)
+    -> [([Curso], Int)]
+    -> [(String, Int)]
+    -> [([Curso], Int)]
+
+-- Si la lista ordenada esta vacia, la opcion, se convierte en su unico elemento
+insertarPorPuntaje opcion [] _ = [opcion]
+
+insertarPorPuntaje opcion (actual:resto) prioridades
+    | puntaje (fst opcion) prioridades
+        >= puntaje (fst actual) prioridades =
+            opcion : actual : resto
+
+    | otherwise =
+            actual : insertarPorPuntaje opcion resto prioridades
+
+
+-- Ordena recursivamente una lista de opciones desde el puntaje mas alto hasta el mas bajo
+ordenarPorPuntaje
+    :: [([Curso], Int)]
+    -> [(String, Int)]
+    -> [([Curso], Int)]
+
+ordenarPorPuntaje [] _ = []                          --Una lista vacia ya esta ordenada
+
+-- Ordena primero el resto e inserta la primera opcion en la posicion correspondiente segun su puntaje
+ordenarPorPuntaje (opcion:resto) prioridades =
+    insertarPorPuntaje
+        opcion
+        (ordenarPorPuntaje resto prioridades)
+        prioridades
+
+{- ===================================================
+   PARTE 7: Rankear
+   =================================================== -}
+
+-- Construye el ranking tomando las opciones ya ordenadas y dandoles una posicion y un puntaje a cada una
+crearRanking
+    :: Int
+    -> Int
+    -> [([Curso], Int)]
+    -> [(String, Int)]
+    -> [(Int, [Curso], Int)]
+
+-- Termina cuando ya se tomo la cantidad solicitada
+crearRanking _ cantidad _ _
+    | cantidad <= 0 = []
+
+-- Termina si no quedan opciones disponibles
+crearRanking _ _ [] _ = []
+
+-- Agrega la opcion actual al ranking y continua con la siguiente
+crearRanking posicion cantidad ((cursos, _):resto) prioridades =
+    (posicion, cursos, puntaje cursos prioridades)
+    : crearRanking
+        (posicion + 1)
+        (cantidad - 1)
+        resto
+        prioridades
+
+-- Ordena las opciones por puntaje y devuelve como maximo la cantidad solicitada
+mejoresHorarios
+    :: [([Curso], Int)]
+    -> [(String, Int)]
+    -> Int
+    -> [(Int, [Curso], Int)]
+
+mejoresHorarios opciones prioridades cantidad =
+    let opcionesOrdenadas =
+            ordenarPorPuntaje opciones prioridades
+    in crearRanking
+        1
+        cantidad
+        opcionesOrdenadas
+        prioridades
