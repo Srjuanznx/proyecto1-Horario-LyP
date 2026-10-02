@@ -95,3 +95,110 @@ Ordenamiento por prioridad
         |
         v
 Selección de los mejores horarios
+
+
+## 6. Modelo de datos
+
+Para representar la información académica se definieron los tipos de datos `Horario` y `Curso`.
+
+### 6.1. Tipo `Horario`
+
+```haskell
+data Horario = Horario
+    { dia        :: String
+    , horaInicio :: Double
+    , horaFin    :: Double
+    } deriving (Show, Eq)
+```
+
+El tipo `Horario` representa el espacio temporal semanal de una asignatura.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `dia` | `String` | Día de la semana en el que se ofrece el curso. |
+| `horaInicio` | `Double` | Hora en la que comienza la clase, expresada en formato decimal. |
+| `horaFin` | `Double` | Hora en la que termina la clase, expresada en formato decimal. |
+
+Ejemplo:
+
+```haskell
+hCalculoIII = Horario "Lunes" 7.0 9.0
+```
+
+Este valor representa una clase que se ofrece el lunes desde las 7:00 hasta las 9:00.
+
+### 6.2. Tipo `Curso`
+
+```haskell
+data Curso = Curso
+    { codigo        :: String
+    , nombreCurso   :: String
+    , creditos      :: Int
+    , horario       :: Horario
+    , prerequisitos :: [String]
+    } deriving (Show, Eq)
+```
+
+El tipo `Curso` representa la información académica necesaria de una asignatura.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `codigo` | `String` | Código utilizado para identificar el curso. |
+| `nombreCurso` | `String` | Nombre completo de la asignatura. |
+| `creditos` | `Int` | Número de créditos académicos del curso. |
+| `horario` | `Horario` | Estructura que contiene el día y las horas del curso. |
+| `prerequisitos` | `[String]` | Lista de códigos de los cursos que deben aprobarse previamente. |
+
+Ejemplo:
+
+```haskell
+calculoIII =
+    Curso "NM2001" "Calculo III" 3 hCalculoIII []
+```
+
+El ejemplo representa el curso Cálculo III, identificado por el código `NM2001`, con tres créditos, un horario asociado y sin prerrequisitos registrados en los datos de prueba.
+
+Los prerrequisitos se incluyen como parte del modelo solicitado. Sin embargo, su análisis y validación corresponden principalmente al componente lógico desarrollado en Prolog.
+
+### 6.3. Derivación de `Show` y `Eq`
+
+Ambos tipos utilizan:
+
+```haskell
+deriving (Show, Eq)
+```
+
+La clase `Show` permite convertir los valores en texto para mostrarlos en la terminal. Esta funcionalidad se utiliza durante las pruebas y la depuración.
+
+La clase `Eq` permite comparar dos valores del mismo tipo mediante los operadores:
+
+```haskell
+==
+/=
+```
+
+Gracias a `Eq`, las pruebas automáticas pueden comparar cursos, horarios, combinaciones y resultados completos.
+
+## 7. Catálogo utilizado en las pruebas
+
+Los nombres, códigos y créditos corresponden a las materias suministradas para el tercer semestre. Los horarios son ficticios y fueron definidos únicamente para comprobar la detección de conflictos.
+
+| Código | Asignatura | Créditos | Horario de prueba |
+|---|---|---:|---|
+| `NM2001` | Cálculo III | 3 | Lunes, 7:00–9:00 |
+| `NM2002` | Probabilidad y Estadística | 3 | Lunes, 8:00–10:00 |
+| `SI2001` | Estructura de datos y algoritmos | 3 | Lunes, 9:00–11:00 |
+| `SI2002` | Lenguajes formales | 3 | Martes, 7:00–9:00 |
+| `SI2003` | Sistemas de gestión de datos | 3 | Miércoles, 10:00–12:00 |
+| `TA2003` | Talento I | 0 | Jueves, 8:00–9:00 |
+| `NFI4` | Política | 3 | Martes, 8:00–10:00 |
+
+El identificador `NFI4` se utilizó para Política debido a que no se suministró otro código para esta asignatura.
+
+Los horarios fueron seleccionados para incluir diferentes casos de prueba:
+
+- Cálculo III y Probabilidad y Estadística se superponen.
+- Cálculo III y Estructura de datos y algoritmos son consecutivos.
+- Lenguajes formales y Política se superponen.
+- Sistemas de gestión de datos y Talento I se ofrecen en días diferentes a los demás cursos.
+- Talento I permite comprobar el manejo de una asignatura con cero créditos.
