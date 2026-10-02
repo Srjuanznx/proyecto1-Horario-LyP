@@ -1,11 +1,13 @@
+module ProyectoHorario where
+
 {- ===================================================
    PARTE 1: Definicion de Tipos de Datos
    Proyecto de Programacion Funcional (Haskell)
    =================================================== -}
 
 -- Este bloque representa el espacio temporal de una asignatura
-data Horario = Horario  
-{ dia :: String            -- Dia de la semana (por ejem: "Martes")
+data Horario = Horario  {
+ dia :: String            -- Dia de la semana (por ejem: "Martes")
 , horaInicio :: Double     -- Hora de inicio en formato de decimal (por ejem: 8.0 = 8:00AM)
 , horaFin :: Double        -- Hora de finalizacion en formato decimal
 } deriving (Show, Eq) 
@@ -16,8 +18,8 @@ Usamos deriving (Show, Eq) para que Haskell genere automaticamente la logica de 
 pantalla y la comparacion con ==, evitandonos de este modo escribir ese codigo manualmente. -}
 
 -- Este bloque representa la informacion completa de una materia
-data Curso = Curso      
-{ codigo :: String              -- Identificador del curso (por ejem: "SI1002")
+data Curso = Curso      {
+ codigo :: String              -- Identificador del curso (por ejem: "SI1002")
 , nombreCurso :: String         -- Nombre de la asignatura
 , creditos :: Int               -- Numero de creditos academicos
 , horario :: Horario            -- Estructura de tipo Horario asociada
