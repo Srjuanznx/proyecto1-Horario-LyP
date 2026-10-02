@@ -32,3 +32,8 @@ La solución está dividida en dos componentes:
 
 La implementación funcional, tanto como su información técnica y códigos fuente, se encuentran en la carpeta [`Haskell`](./Haskell/).
 
+Archivos principales:
+
+- [`ProyectoHorario.hs`](./Haskell/ProyectoHorario.hs): tipos de datos y funciones requeridas.
+- [`Main.hs`](./Haskell/Main.hs): catálogo académico, prioridades, pruebas funcionales y ejemplos de ejecución.
+
