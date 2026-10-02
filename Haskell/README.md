@@ -195,7 +195,7 @@ Los nombres, códigos y créditos corresponden a las materias suministradas para
 | `TA2003` | Talento I | 0 | Jueves, 8:00–9:00 |
 | `NFI4` | Política | 3 | Martes, 8:00–10:00 |
 
-El identificador `NFI4` se utilizó para Política debido a que no se suministró otro código para esta asignatura.
+El identificador `NFI4` se utilizó para Política debido a que es una asignatura optativa, por lo cual no hay código conocido para esta.
 
 Los horarios fueron seleccionados para incluir diferentes casos de prueba:
 
