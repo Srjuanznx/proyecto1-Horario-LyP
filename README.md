@@ -12,7 +12,7 @@
 
 ## Integrantes
 
-| Nombre completo | Identificación | Correo institucional |
-|---|---|---|
-| Juan David Soto Garcés | [ID PENDIENTE] | jdsotog@eafit.edu.co |
-| Tomas Agudelo Macias | [ID PENDIENTE] | tagudelom3@eafit.brightspace.com |
+| Nombre completo | Correo institucional |
+|---|---|
+| Juan David Soto Garcés | jdsotog.eafit.edu.co |
+| Tomas Agudelo Macias | tagudelom3@eafit.brightspace.com |
