@@ -1,209 +1,230 @@
-module ProyectoHorario where
+module Main where
 
-{- ===================================================
-   PARTE 1: Definicion de Tipos de Datos
-   Proyecto de Programacion Funcional (Haskell)
-   =================================================== -}
+import ProyectoHorario
 
--- Este bloque representa el espacio temporal de una asignatura
-data Horario = Horario  {
- dia :: String            -- Dia de la semana (por ejem: "Martes")
-, horaInicio :: Double     -- Hora de inicio en formato de decimal (por ejem: 8.0 = 8:00AM)
-, horaFin :: Double        -- Hora de finalizacion en formato decimal
-} deriving (Show, Eq) 
+-- ===================================================
+-- Horarios de prueba
+-- Los horarios son ficticios
+-- ===================================================
 
-{- "Show" nos permite ver e imprimir los datos en la consola, por otro lado,
-"Eq" Permite comparar si dos datos son iguales o diferentes usando == o /=. En otras palabras, 
-Usamos deriving (Show, Eq) para que Haskell genere automaticamente la logica de impresion en 
-pantalla y la comparacion con ==, evitandonos de este modo escribir ese codigo manualmente. -}
+hCalculoIII, hProbabilidad, hEstructuraDatos, hLenguajesFormales,
+    hGestionDatos, hTalentoI, hPolitica :: Horario
 
--- Este bloque representa la informacion completa de una materia
-data Curso = Curso      {
- codigo :: String              -- Identificador del curso (por ejem: "SI1002")
-, nombreCurso :: String         -- Nombre de la asignatura
-, creditos :: Int               -- Numero de creditos academicos
-, horario :: Horario            -- Estructura de tipo Horario asociada
-, prerequisitos :: [String]     -- Lista con los prerequisitos
-} deriving (Show, Eq) 
+hCalculoIII = Horario "Lunes" 7.0 9.0
+hProbabilidad = Horario "Lunes" 8.0 10.0
+hEstructuraDatos = Horario "Lunes" 9.0 11.0
+hLenguajesFormales = Horario "Martes" 7.0 9.0
+hGestionDatos = Horario "Miercoles" 10.0 12.0
+hTalentoI = Horario "Jueves" 8.0 9.0
+hPolitica = Horario "Martes" 8.0 10.0
 
-{- ===================================================
-   PARTE 2: Funciones de Validacion
-   =================================================== -}
+-- ===================================================
+-- Cursos de prueba
+-- Los nombres, codigos y creditos corresponden a los
+-- cursos reales del tercer semestre de Ingenieria
+-- de Sistemas en EAFIT
+-- ===================================================
 
--- Determina si dos horarios se sobreponen en el mismo dia y en el mismo rango de horas
-seCruzan :: Horario -> Horario -> Bool        --Toma 2 parametros de tipo horario, y devuelve un tipo Bool (True o False)
+calculoIII, probabilidad, estructuraDatos, lenguajesFormales,
+    gestionDatos, talentoI, politica :: Curso
 
---Bloque que determina mediante condicionales si una clase se cruza con otra (Si se superponen devuelve True, y sino, devuelve False)
-seCruzan h1 h2 = (dia h1 == dia h2)
-            && (horaInicio h1 < horaFin h2)
-            && (horaInicio h2 < horaFin h1)
+calculoIII =
+    Curso "NM2001" "Calculo III" 3 hCalculoIII []
 
---Funcion auxiliar que recibe un curso y una lista de cursos, y determina si ese curso choca con alguno de la lista.
-cruzaConAlguno :: Curso -> [Curso] -> Bool
-cruzaConAlguno _ [] = False              --Verifica resultado con una lista vacia
-cruzaConAlguno c (x:xs) = seCruzan (horario c) (horario x) || cruzaConAlguno c xs  {- Verifica si el horario del curso c se cruza con el horario del primer curso de la lista (x),
- y si no, llama recursivamente a la funcion con el resto de la lista (xs) -}
+probabilidad =
+    Curso "NM2002" "Probabilidad y Estadistica" 3 hProbabilidad []
 
---Funcion principal que determina si una lista de cursos tiene algun choque de horarios entre ellos
-horarioValido :: [Curso] -> Bool
-horarioValido [] = True                                               --Caso base: una lista vacia de cursos es valida
-horarioValido (c:cs) = not (cruzaConAlguno c cs) && horarioValido cs  {- Verifica si el primer curso de la lista (c) choca con alguno de los cursos restantes (cs) y si no,
- llama recursivamente a la funcion con el resto de la lista (cs) -}
+estructuraDatos =
+    Curso "SI2001" "Estructura de datos y algoritmos"
+        3 hEstructuraDatos []
 
--- Suma recursivamente los creditos de una lista de cursos
-totalCreditos :: [Curso] -> Int
-totalCreditos [] = 0
-totalCreditos (c:cs) = creditos c + totalCreditos cs
+lenguajesFormales =
+    Curso "SI2002" "Lenguajes formales" 3 hLenguajesFormales []
 
-{- ===================================================
-   PARTE 3: Combinaciones
-   =================================================== -}
+gestionDatos =
+    Curso "SI2003" "Sistemas de gestion de datos" 3 hGestionDatos []
 
---Aqui recibe una lista de cursos y entrega una lista de una lista de cursos, en donde cada lista interior representa una posible combinacion
-combinaciones :: [Curso] -> [[Curso]]
-combinaciones [] = [[]]
+talentoI =
+    Curso "TA2003"
+        "Talento I - Escuela de Ciencias Aplicadas e Ingenieria"
+        0 hTalentoI []
 
-{- Genera las combinaciones que no incluyen el primer curso
-y las combinaciones que si lo incluyen. -}
-combinaciones (c:cs) =
-    let combinacionesSinC = combinaciones cs
-        combinacionesConC = agregarATodas c combinacionesSinC
-    in combinacionesSinC ++ combinacionesConC
+politica =
+    Curso "NFI4" "Politica" 3 hPolitica []
 
---Funcion auxiliar que agrega un curso a todas las combinaciones
-agregarATodas :: Curso -> [[Curso]] -> [[Curso]]
-agregarATodas _ [] = []                          -- Si no quedan combinaciones por procesar, devolvemos una lista vacia
-agregarATodas c (combinacion:resto) =            -- "combinacion" es la primer combinacion de la lista, de tipo [Curso]
-    (c : combinacion) : agregarATodas c resto    -- El primer ":" agrega c a la combinacion actual; el segundo ":" agrega esa combinacion modificada al resultado
+-- ===================================================
+-- Catalogo de prueba
+-- ===================================================
 
-{- ===================================================
-   PARTE 4: Filtrado de opciones validas
-   =================================================== -}
+catalogo :: [Curso]
+catalogo =
+    [ calculoIII, probabilidad, estructuraDatos, lenguajesFormales
+    , gestionDatos, talentoI, politica
+    ]
 
--- Genera todas las combinaciones del catalogo y se queda solamente las opciones validas
-opcionesValidas :: [Curso] -> Int -> Int -> [([Curso], Int)]
-opcionesValidas catalogo minimo maximo =
-    filtrarOpciones (combinaciones catalogo) minimo maximo
+-- ===================================================
+-- Prioridades de prueba
+-- Representan las preferencias del estudiante
+-- ===================================================
 
--- Recorre una lista de combinaciones y conserva unicamente las que tienen un horario valido y cumplen el rango de creditos
-filtrarOpciones :: [[Curso]] -> Int -> Int -> [([Curso], Int)]
---no quedan combinaciones por revisar
-filtrarOpciones [] _ _ = []
---revisa la primera opcion y sigue con el resto
-filtrarOpciones (opcion:resto) minimo maximo
-    | esOpcionValida opcion minimo maximo =
-        (opcion, totalCreditos opcion)
-        : filtrarOpciones resto minimo maximo
-        
-    | otherwise =                            -- Si la combinacion no cumple las condiciones, se descarta y se siguen revisando recursivamente el resto de las opciones
-        filtrarOpciones resto minimo maximo
+prioridades :: [(String, Int)]
+prioridades =
+    [ ("NM2001", 10), ("NM2002", 8), ("SI2001", 9)
+    , ("SI2002", 7), ("SI2003", 6), ("TA2003", 1)
+    , ("NFI4", 4)
+    ]
 
--- Determina si una combinacion tiene un horario valido y una cantidad de creditos dentro del rango permitido
-esOpcionValida :: [Curso] -> Int -> Int -> Bool
-esOpcionValida cursos minimo maximo =
-    let total = totalCreditos cursos
-    in horarioValido cursos
-       && total >= minimo
-       && total <= maximo
+-- ===================================================
+-- Funciones auxiliares para ejecutar las pruebas
+-- ===================================================
 
---(opcionesValidas es la funcion principal, y filtrarOpciones y esOpcionValida son las funciones auxiliares utilizadas para su funcionamiento)
+-- Muestra si una condicion de prueba se cumple
+probar :: String -> Bool -> IO ()
+probar nombre condicion =
+    if condicion
+        then putStrLn ("OK: " ++ nombre)
+        else putStrLn ("FALLO: " ++ nombre)
 
-{- ===================================================
-   PARTE 5: Calcular puntajes por su prioridad
-   =================================================== -}
+-- Convierte una lista de cursos en un texto compacto
+-- que contiene solamente sus nombres
+formatearCursos :: [Curso] -> String
+formatearCursos [] = "[]"
+formatearCursos (curso:resto) =
+    "[" ++ nombreCurso curso ++ formatearResto resto
 
--- Busca recursivamente la prioridad asociada a un codigo, si el codigo no aparece, devuelve 0
-buscarPrioridad :: String -> [(String, Int)] -> Int
-buscarPrioridad _ [] = 0
-buscarPrioridad codigoBuscado ((codigoActual, prioridad):resto)
-    | codigoBuscado == codigoActual = prioridad
-    | otherwise = buscarPrioridad codigoBuscado resto
+-- Agrega los cursos restantes y cierra la lista
+formatearResto :: [Curso] -> String
+formatearResto [] = "]"
+formatearResto (curso:resto) =
+    ", " ++ nombreCurso curso ++ formatearResto resto
 
--- Calcula recursivamente el puntaje total de una combinacion, sumando la prioridad asignada a cada curso
-puntaje :: [Curso] -> [(String, Int)] -> Int
-puntaje [] _ = 0
-puntaje (curso:resto) prioridades =
-    buscarPrioridad (codigo curso) prioridades
-    + puntaje resto prioridades
+-- Muestra cada opcion valida en una linea
+mostrarOpcionesValidas :: [([Curso], Int)] -> IO ()
+mostrarOpcionesValidas [] =
+    return ()
 
-{- ===================================================
-   PARTE 6: Ordenamiento
-   =================================================== -}
+mostrarOpcionesValidas ((cursos, total):resto) = do
+    putStrLn
+        ("(" ++ formatearCursos cursos
+        ++ ", " ++ show total ++ ")")
 
--- Inserta una opcion en una lista ya ordenada, conservando el orden de mayor a menor puntaje
-insertarPorPuntaje
-    :: ([Curso], Int)
-    -> [([Curso], Int)]
-    -> [(String, Int)]
-    -> [([Curso], Int)]
+    mostrarOpcionesValidas resto
 
--- Si la lista ordenada esta vacia, la opcion, se convierte en su unico elemento
-insertarPorPuntaje opcion [] _ = [opcion]
+-- Muestra cada posicion del ranking en una linea
+mostrarRanking :: [(Int, [Curso], Int)] -> IO ()
+mostrarRanking [] =
+    return ()
 
-insertarPorPuntaje opcion (actual:resto) prioridades
-    | puntaje (fst opcion) prioridades
-        >= puntaje (fst actual) prioridades =
-            opcion : actual : resto
+mostrarRanking ((posicion, cursos, puntos):resto) = do
+    putStrLn
+        ("(" ++ show posicion
+        ++ ", " ++ formatearCursos cursos
+        ++ ", " ++ show puntos ++ ")")
 
-    | otherwise =
-            actual : insertarPorPuntaje opcion resto prioridades
+    mostrarRanking resto
 
+-- ===================================================
+-- Programa principal de pruebas
+-- ===================================================
 
--- Ordena recursivamente una lista de opciones desde el puntaje mas alto hasta el mas bajo
-ordenarPorPuntaje
-    :: [([Curso], Int)]
-    -> [(String, Int)]
-    -> [([Curso], Int)]
+main :: IO ()
+main = do
+    putStrLn "=== PRUEBAS FUNCIONALES ==="
 
-ordenarPorPuntaje [] _ = []                          --Una lista vacia ya esta ordenada
+    -- Prueba 1
+    probar "seCruzan detecta conflicto entre Calculo III y Probabilidad"
+        (seCruzan hCalculoIII hProbabilidad)
 
--- Ordena primero el resto e inserta la primera opcion en la posicion correspondiente segun su puntaje
-ordenarPorPuntaje (opcion:resto) prioridades =
-    insertarPorPuntaje
-        opcion
-        (ordenarPorPuntaje resto prioridades)
-        prioridades
+    -- Prueba 2
+    probar "Calculo III y Estructura de datos son consecutivos"
+        (not (seCruzan hCalculoIII hEstructuraDatos))
 
-{- ===================================================
-   PARTE 7: Rankear
-   =================================================== -}
+    -- Prueba 3
+    probar "horarioValido acepta cursos compatibles"
+        (horarioValido
+            [ calculoIII, estructuraDatos, lenguajesFormales
+            , gestionDatos, talentoI
+            ])
 
--- Construye el ranking tomando las opciones ya ordenadas y dandoles una posicion y un puntaje a cada una
-crearRanking
-    :: Int
-    -> Int
-    -> [([Curso], Int)]
-    -> [(String, Int)]
-    -> [(Int, [Curso], Int)]
+    -- Prueba 4
+    probar "horarioValido rechaza cursos conflictivos"
+        (not (horarioValido [calculoIII, probabilidad]))
 
--- Termina cuando ya se tomo la cantidad solicitada
-crearRanking _ cantidad _ _
-    | cantidad <= 0 = []
+    -- Prueba 5
+    probar "totalCreditos maneja un curso de cero creditos"
+        (totalCreditos [calculoIII, estructuraDatos, talentoI] == 6)
 
--- Termina si no quedan opciones disponibles
-crearRanking _ _ [] _ = []
+    -- Prueba 6
+    probar "combinaciones genera los subconjuntos esperados"
+        (combinaciones [calculoIII, estructuraDatos]
+            == [ [], [estructuraDatos], [calculoIII]
+               , [calculoIII, estructuraDatos]
+               ])
 
--- Agrega la opcion actual al ranking y continua con la siguiente
-crearRanking posicion cantidad ((cursos, _):resto) prioridades =
-    (posicion, cursos, puntaje cursos prioridades)
-    : crearRanking
-        (posicion + 1)
-        (cantidad - 1)
-        resto
-        prioridades
+    -- Prueba 7
+    probar "opcionesValidas acepta exactamente seis creditos"
+        (opcionesValidas [calculoIII, estructuraDatos] 6 6
+            == [([calculoIII, estructuraDatos], 6)])
 
--- Ordena las opciones por puntaje y devuelve como maximo la cantidad solicitada
-mejoresHorarios
-    :: [([Curso], Int)]
-    -> [(String, Int)]
-    -> Int
-    -> [(Int, [Curso], Int)]
+    -- Prueba 8
+    probar "buscarPrioridad y puntaje funcionan correctamente"
+        (buscarPrioridad "NFI4" prioridades == 4
+            && puntaje
+                [calculoIII, estructuraDatos, lenguajesFormales]
+                prioridades == 26)
 
-mejoresHorarios opciones prioridades cantidad =
-    let opcionesOrdenadas =
-            ordenarPorPuntaje opciones prioridades
-    in crearRanking
-        1
-        cantidad
-        opcionesOrdenadas
-        prioridades
+    -- Opciones usadas para probar el ordenamiento
+    let opcionesDesordenadas =
+            [ ([probabilidad, lenguajesFormales], 6)
+            , ([calculoIII, lenguajesFormales], 6)
+            , ([calculoIII, estructuraDatos], 6)
+            ]
+
+    let opcionesOrdenadasEsperadas =
+            [ ([calculoIII, estructuraDatos], 6)
+            , ([calculoIII, lenguajesFormales], 6)
+            , ([probabilidad, lenguajesFormales], 6)
+            ]
+
+    -- Prueba 9
+    probar "ordenarPorPuntaje ordena de mayor a menor"
+        (ordenarPorPuntaje opcionesDesordenadas prioridades
+            == opcionesOrdenadasEsperadas)
+
+    -- Prueba 10
+    probar "mejoresHorarios devuelve las dos mejores opciones"
+        (mejoresHorarios opcionesDesordenadas prioridades 2
+            == [ (1, [calculoIII, estructuraDatos], 19)
+               , (2, [calculoIII, lenguajesFormales], 17)
+               ])
+
+    -- Prueba 11
+    probar "mejoresHorarios acepta una cantidad igual a cero"
+        (mejoresHorarios opcionesDesordenadas prioridades 0 == [])
+
+    -- Generacion de opciones para la prueba completa
+    let opcionesCompletas = opcionesValidas catalogo 12 18
+
+    let rankingEsperado =
+            [ (1, [calculoIII, estructuraDatos, lenguajesFormales,
+                   gestionDatos, talentoI], 33)
+            , (2, [calculoIII, estructuraDatos, lenguajesFormales,
+                   gestionDatos], 32)
+            , (3, [calculoIII, estructuraDatos, gestionDatos,
+                   talentoI, politica], 30)
+            ]
+
+    -- Prueba 12
+    probar "flujo completo desde el catalogo hasta el ranking"
+        (mejoresHorarios opcionesCompletas prioridades 3
+            == rankingEsperado)
+
+    -- Ejemplos de ejecucion solicitados en el enunciado
+    putStrLn ""
+    putStrLn "=== EJEMPLO DE OPCIONES VALIDAS ==="
+    mostrarOpcionesValidas opcionesCompletas
+
+    putStrLn ""
+    putStrLn "=== TRES MEJORES HORARIOS ==="
+    mostrarRanking
+        (mejoresHorarios opcionesCompletas prioridades 3)
