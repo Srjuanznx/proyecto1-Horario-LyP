@@ -95,6 +95,8 @@ Ordenamiento por prioridad
         |
         v
 Selección de los mejores horarios
+```
+
 
 
 ## 6. Modelo de datos
