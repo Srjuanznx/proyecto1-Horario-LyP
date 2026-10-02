@@ -45,4 +45,5 @@ Archivos principales:
 
 - [`ProyectoHorario.hs`](./Haskell/ProyectoHorario.hs): tipos de datos y funciones requeridas.
 - [`Main.hs`](./Haskell/Main.hs): catálogo académico, prioridades, pruebas funcionales y ejemplos de ejecución.
+- [`README.md`](./prolog/README.md)
 
