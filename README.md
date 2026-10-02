@@ -53,3 +53,6 @@ Archivos principales:
 - Link Haskell:
 - Link Prolog: 
 
+## 4. Comparación entre paradigmas
+
+Haskell utiliza el paradigma funcional, en el cual el programa se construye mediante funciones que reciben datos y producen resultados. Para repetir los procesos se utiliza recursión. Prolog utiliza el paradigma lógico, donde se definen hechos y reglas, y el sistema busca una respuesta mediante consultas. En Haskell se describe con mayor detalle cómo transformar los datos, mientras que en Prolog se indica qué condiciones deben cumplirse. Ambos paradigmas permiten dividir el problema en partes pequeñas, pero utilizan formas diferentes de pensar y resolverlo.
