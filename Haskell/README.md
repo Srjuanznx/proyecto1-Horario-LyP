@@ -400,3 +400,149 @@ totalCreditos [CalculoIII, EstructuraDatos, TalentoI]
 ```
 
 Este ejemplo también demuestra que un curso con cero créditos se procesa correctamente.
+
+## 9. Generación y filtrado de combinaciones
+
+| Función | Firma | Descripción |
+|---|---|---|
+| `combinaciones` | `[Curso] -> [[Curso]]` | Genera todos los subconjuntos posibles del catálogo. |
+| `agregarATodas` | `Curso -> [[Curso]] -> [[Curso]]` | Agrega un curso a cada combinación existente. |
+| `esOpcionValida` | `[Curso] -> Int -> Int -> Bool` | Comprueba el horario y el rango de créditos. |
+| `filtrarOpciones` | `[[Curso]] -> Int -> Int -> [([Curso], Int)]` | Conserva recursivamente las combinaciones válidas. |
+| `opcionesValidas` | `[Curso] -> Int -> Int -> [([Curso], Int)]` | Genera y filtra las combinaciones del catálogo. |
+
+El caso base de `combinaciones` es `[[]]`, porque un catálogo vacío tiene una combinación posible: la combinación vacía. Para cada curso se generan dos grupos: las combinaciones que no lo incluyen y las que sí lo incluyen. El segundo grupo se obtiene mediante `agregarATodas` y ambos se unen con `++`.
+
+`opcionesValidas` genera las combinaciones y utiliza `filtrarOpciones` para conservar solamente aquellas que no presentan conflictos y cuyo total se encuentra entre los límites mínimo y máximo, incluidos ambos extremos.
+
+## 10. Puntaje, ordenamiento y ranking
+
+| Función | Firma | Descripción |
+|---|---|---|
+| `buscarPrioridad` | `String -> [(String, Int)] -> Int` | Busca la prioridad de un código; devuelve cero si no existe. |
+| `puntaje` | `[Curso] -> [(String, Int)] -> Int` | Suma las prioridades de los cursos de una combinación. |
+| `insertarPorPuntaje` | `([Curso], Int) -> [([Curso], Int)] -> [(String, Int)] -> [([Curso], Int)]` | Inserta una opción en una lista ordenada. |
+| `ordenarPorPuntaje` | `[([Curso], Int)] -> [(String, Int)] -> [([Curso], Int)]` | Ordena las opciones de mayor a menor puntaje. |
+| `crearRanking` | `Int -> Int -> [([Curso], Int)] -> [(String, Int)] -> [(Int, [Curso], Int)]` | Asigna posiciones y limita la cantidad de resultados. |
+| `mejoresHorarios` | `[([Curso], Int)] -> [(String, Int)] -> Int -> [(Int, [Curso], Int)]` | Devuelve las mejores `n` opciones con su posición y puntaje. |
+
+El ordenamiento se implementó mediante **insertion sort recursivo**. Primero se ordena la cola de la lista y luego se inserta la primera opción en la posición correspondiente según su puntaje. De esta manera se obtiene un orden descendente sin utilizar `sort`.
+
+El flujo final es:
+
+```text
+Catálogo
+   ↓
+Combinaciones
+   ↓
+Opciones válidas
+   ↓
+Cálculo de puntajes
+   ↓
+Ordenamiento descendente
+   ↓
+Mejores n horarios
+```
+
+## 11. Ejecución y pruebas
+
+### 11.1. Ejecución
+
+Desde la carpeta `Haskell` se ejecuta:
+
+```bash
+runghc Main.hs
+```
+
+También puede compilarse mediante:
+
+```bash
+ghc Main.hs -o proyectoHorario
+```
+
+### 11.2. Ejemplos funcionales
+
+| Funcionalidad | Llamada | Resultado resumido |
+|---|---|---|
+| Cruce de horarios | `seCruzan hCalculoIII hProbabilidad` | `True` |
+| Horarios consecutivos | `seCruzan hCalculoIII hEstructuraDatos` | `False` |
+| Horario válido | `horarioValido [calculoIII, estructuraDatos]` | `True` |
+| Horario inválido | `horarioValido [calculoIII, probabilidad]` | `False` |
+| Total de créditos | `totalCreditos [calculoIII, estructuraDatos, talentoI]` | `6` |
+| Combinaciones | `combinaciones [calculoIII, estructuraDatos]` | Cuatro combinaciones |
+| Opción válida | `opcionesValidas [calculoIII, estructuraDatos] 6 6` | Una opción de 6 créditos |
+| Puntaje | `puntaje [calculoIII, estructuraDatos, lenguajesFormales] prioridades` | `26` |
+| Ordenamiento | `ordenarPorPuntaje opcionesDesordenadas prioridades` | Puntajes `19, 17, 15` |
+| Mejores horarios | `mejoresHorarios opcionesCompletas prioridades 3` | Puntajes `33, 32, 30` |
+
+### 11.3. Opciones válidas del catálogo
+
+Llamada:
+
+```haskell
+opcionesValidas catalogo 12 18
+```
+
+Salida resumida por códigos:
+
+```text
+([NM2001, SI2001, SI2003, NFI4], 12)
+([NM2001, SI2001, SI2003, TA2003, NFI4], 12)
+([NM2001, SI2001, SI2002, SI2003], 12)
+([NM2001, SI2001, SI2002, SI2003, TA2003], 12)
+```
+
+Cada resultado tiene la forma:
+
+```text
+(combinacion, totalCreditos)
+```
+
+### 11.4. Mejores horarios
+
+Llamada:
+
+```haskell
+mejoresHorarios (opcionesValidas catalogo 12 18) prioridades 3
+```
+
+Salida resumida:
+
+```text
+(1, [NM2001, SI2001, SI2002, SI2003, TA2003], 33)
+(2, [NM2001, SI2001, SI2002, SI2003], 32)
+(3, [NM2001, SI2001, SI2003, TA2003, NFI4], 30)
+```
+
+Cada resultado contiene:
+
+```text
+(posicion, combinacion, puntaje)
+```
+
+### 11.5. Resultado de las pruebas automáticas
+
+`Main.hs` incluye doce pruebas funcionales y una prueba completa de integración.
+
+<details>
+<summary>Ver salida de las pruebas</summary>
+
+```text
+=== PRUEBAS FUNCIONALES ===
+OK: seCruzan detecta conflicto entre Calculo III y Probabilidad
+OK: Calculo III y Estructura de datos son consecutivos
+OK: horarioValido acepta cursos compatibles
+OK: horarioValido rechaza cursos conflictivos
+OK: totalCreditos maneja un curso de cero creditos
+OK: combinaciones genera los subconjuntos esperados
+OK: opcionesValidas acepta exactamente seis creditos
+OK: buscarPrioridad y puntaje funcionan correctamente
+OK: ordenarPorPuntaje ordena de mayor a menor
+OK: mejoresHorarios devuelve las dos mejores opciones
+OK: mejoresHorarios acepta una cantidad igual a cero
+OK: flujo completo desde el catalogo hasta el ranking
+```
+
+</details>
+
+Todas las pruebas produjeron el resultado esperado. La última prueba verifica el flujo completo desde la generación de combinaciones hasta la selección de los tres mejores horarios.
