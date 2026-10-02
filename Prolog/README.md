@@ -1,214 +1,229 @@
-# Parte II: programación lógica en Prolog
+# Guía para explicar el código de Prolog
 
-Sistema experto de matrícula y rutas académicas del proyecto **Programming Languages and Paradigms — Practice No. 1: Functional and Logical Programming (2026-2)**.
+Esta guía acompaña el recorrido del código en pantalla. Primero explica **[proyectoHorario.pl](proyectoHorario.pl)** y después **[pruebas.pl](pruebas.pl)**, siguiendo el orden de sus definiciones. Incluye todos los predicados propios, sus argumentos, su lógica y ejemplos.
 
-Esta carpeta implementa la **Parte II del enunciado, secciones 2.1 y 2.2**. Permite consultar qué materias puede cursar un estudiante, validar horarios, sumar créditos, recorrer prerrequisitos y construir un plan por semestres.
+En Prolog hablamos de **predicados**: una consulta puede tener éxito, fallar o encontrar valores para variables. La notación `nombre/2` indica dos argumentos; no implica una función que devuelve un valor como en otros lenguajes.
 
-## Contenido
+**Cómo usar la guía:** lee la explicación detallada para entender cada bloque y utiliza las frases «Para narrar» mientras muestras el código. Al final hay un recorrido breve para un video de hasta cinco minutos. Leer toda la guía en voz alta excedería ese tiempo.
 
-1. [Alcance y requisitos](#1-alcance-y-requisitos)
-2. [Archivos y ejecución](#2-archivos-y-ejecución)
-3. [Base de conocimiento](#3-base-de-conocimiento)
-4. [Sistema de elegibilidad de matrícula](#4-sistema-de-elegibilidad-de-matrícula)
-5. [Sistema de rutas académicas](#5-sistema-de-rutas-académicas)
-6. [Recursividad y auxiliares](#6-recursividad-y-auxiliares)
-7. [Decisiones y límites](#7-decisiones-y-límites)
-8. [Pruebas automatizadas](#8-pruebas-automatizadas)
-9. [Lectura del flujo de ejecución](#9-lectura-del-flujo-de-ejecución)
+## Contexto mínimo de datos.pl
 
-## 1. Alcance y requisitos
+Los hechos describen cursos, horarios, prerrequisitos, estudiantes y aprobaciones. `prerequisito(Curso, Pre)` significa que Pre debe aprobarse antes de Curso. Ana no tiene aprobaciones; Juan ya aprobó Cálculo 1, Álgebra y Programación 1. No hace falta recorrer todo el catálogo para explicar los algoritmos.
 
-El enunciado exige implementar los algoritmos manualmente y utilizar recursividad explícita en las reglas de Prolog. La correspondencia con el código es:
+## Cómo leer las líneas
 
-| Sección del enunciado | Predicado requerido | Responsabilidad |
-| --- | --- | --- |
-| 2.1.1 | `puede_tomar/2` | Comprobar todos los prerrequisitos directos mediante una verificación recursiva. |
-| 2.1.1 | `cruce_horario/2` | Detectar superposición de horarios. |
-| 2.1.1 | `horario_valido/1` | Verificar recursivamente que ningún par de cursos se cruce. |
-| 2.1.1 | `creditos_totales/2` | Sumar recursivamente los créditos. |
-| 2.1.1 | `cursos_disponibles/2` | Filtrar recursivamente el catálogo según prerrequisitos e historial. |
-| 2.2.1 | `cadena_prerequisitos/2` | Obtener prerrequisitos directos e indirectos sin duplicados. |
-| 2.2.1 | `semestre_minimo/2` | Calcular el semestre más temprano según las dependencias. |
-| 2.2.1 | `ruta_academica/3` | Distribuir cursos pendientes por semestres, respetando dependencias y horarios. |
+- Las variables empiezan con mayúscula; códigos como `calculo1` son átomos.
+- `:-` separa la cabeza de la regla de sus condiciones; las comas entre objetivos significan «y».
+- `.` termina una cláusula. Varias cláusulas pueden definir el mismo predicado.
+- `[X|Resto]` separa cabeza y cola; `[]` es la lista vacía; `_` ignora un argumento.
+- `=` unifica términos; `is` evalúa una expresión aritmética.
+- `dif(X,Y)` exige que los términos sean distintos.
+- `\+ Objetivo` es negación por fallo: tiene éxito si el objetivo no se puede demostrar.
+- `(Condicion -> Entonces ; SiNo)` elige una rama según el éxito de la condición. El punto final pertenece a toda la regla.
+- `findall(X, Objetivo, Lista)` recoge las soluciones en una lista; no realiza por sí mismo los filtros recursivos del proyecto.
 
-La notación `nombre/N` indica el nombre del predicado y su número de argumentos. Por ejemplo, `ruta_academica/3` recibe estudiante, objetivos y ruta.
+Las listas de cursos se consultan con códigos concretos y una longitud finita. Los datos presuponen un horario semanal válido por curso.
 
-La generación de combinaciones, el rango de créditos, los puntajes de preferencias y el ranking de mejores horarios corresponden a la **Parte I, Haskell**. El enunciado no exige esas funciones para la ruta de Prolog.
+## Archivo 1: proyectoHorario.pl
 
-## 2. Archivos y ejecución
-
-| Archivo | Función |
-| --- | --- |
-| [datos.pl](datos.pl) | Hechos: cursos, créditos, horarios, prerrequisitos, estudiantes e historial. |
-| [proyectoHorario.pl](proyectoHorario.pl) | Ocho predicados públicos y auxiliares recursivos. Carga automáticamente `datos.pl`. |
-| [pruebas.pl](pruebas.pl) | 51 pruebas automatizadas con `plunit`, incluyendo 3.072 planes académicos. |
-| [README.md](README.md) | Documentación de los datos, reglas, flujo de ejecución y pruebas de Prolog. |
-
-### Requisito
-
-Tener **SWI-Prolog** instalado y el comando `swipl` disponible en la terminal. La implementación se validó previamente con SWI-Prolog 10.0.2.
-
-### Cargar desde la raíz del repositorio
-
-```sh
-swipl -s Prolog/proyectoHorario.pl
-```
-
-Si ya abriste la consola de SWI-Prolog desde la raíz:
+### Inicio: cargar la base de hechos
 
 ```prolog
-?- ['Prolog/proyectoHorario.pl'].
+:- ensure_loaded('datos.pl').
 ```
 
-Si la terminal está dentro de la carpeta `Prolog`:
+Es una directiva que carga la base al leer el archivo. Permite usar `curso/3`, `horario/4`, `prerequisito/2`, `estudiante/1` y `aprobado/2` sin copiar sus hechos dentro de las reglas.
 
-```sh
-swipl -s proyectoHorario.pl
-```
+**Para narrar:** «El archivo comienza cargando los datos que van a consultar las reglas.»
 
-Una vez cargado, escribe las consultas terminadas en punto:
+### 1. `pertenece`
+
+**Uso:** `pertenece(X, Lista)`.
+
+Comprueba si X aparece en Lista.
 
 ```prolog
-?- puede_tomar(juan, calculo2).
-true.
+pertenece(X, [X|_]).
+pertenece(X, [Y|Resto]) :-
+    dif(X, Y),
+    pertenece(X, Resto).
 ```
 
-El prefijo `?-` representa el indicador de la consola: **no debes volver a escribirlo ni incluirlo en el archivo fuente**. Usa `;` para solicitar otra solución, Enter para aceptar la actual y `halt.` para salir. Después de editar un archivo cargado, puedes ejecutar `make.`.
+**Cómo funciona:** La primera cláusula unifica X con la cabeza y termina con éxito. La segunda exige con dif(X,Y) que no sea esa cabeza y busca en Resto. No hay cláusula para la lista vacía: si no encuentra X, falla.
 
-## 3. Base de conocimiento
+**Ejemplo o conexión:** pertenece(algebra, [calculo1, algebra]) avanza una posición y tiene éxito.
 
-### Significado de los hechos
+**Para narrar:** «Busca el elemento recorriendo la lista; cuando coincide con la cabeza, termina.»
+
+### 2. `concatenar`
+
+**Uso:** `concatenar(Primera, Segunda, Resultado)`.
+
+Une dos listas conservando su orden.
 
 ```prolog
-curso(calculo1, 'Calculo 1', 4).
-horario(calculo1, lunes, 7, 9).
-prerequisito(calculo2, calculo1).
-estudiante(juan).
-aprobado(juan, calculo1).
+concatenar([], Lista, Lista).
+concatenar([X|Resto], Lista, [X|Resultado]) :-
+    concatenar(Resto, Lista, Resultado).
 ```
 
-| Hecho | Interpretación |
-| --- | --- |
-| `curso(Codigo, Nombre, Creditos)` | Identifica una materia y sus créditos. |
-| `horario(Curso, Dia, Inicio, Fin)` | Indica su único bloque semanal. |
-| `prerequisito(Curso, Requisito)` | Requisito debe aprobarse antes de Curso. El orden de los argumentos importa. |
-| `estudiante(Estudiante)` | Registra a una persona, incluso si aún no tiene materias aprobadas. |
-| `aprobado(Estudiante, Curso)` | Registra una materia ya aprobada. |
+**Cómo funciona:** Si Primera es [], Resultado es Segunda. En el paso recursivo conserva X en la cabeza del resultado y concatena Resto con Segunda. La lista final se construye por unificación.
 
-### Catálogo del proyecto
+**Ejemplo o conexión:** concatenar([a,b], [c], R) produce R = [a,b,c].
 
-Los datos son ficticios y permiten demostrar casos de dependencias y cruces.
+**Para narrar:** «Reconstruye la primera lista y coloca la segunda al final.»
 
-| Código | Materia | Créditos | Horario | Prerrequisitos directos |
-| --- | --- | --- | --- | --- |
-| `calculo1` | Cálculo 1 | 4 | lunes, 7–9 | Ninguno |
-| `algebra` | Álgebra lineal | 3 | martes, 7–9 | Ninguno |
-| `programacion1` | Programación 1 | 4 | lunes, 9–11 | Ninguno |
-| `introingenieria` | Introducción a la ingeniería | 2 | lunes, 8–10 | Ninguno |
-| `calculo2` | Cálculo 2 | 4 | miércoles, 7–9 | `calculo1`, `algebra` |
-| `fisica1` | Física 1 | 4 | miércoles, 8–10 | `calculo1` |
-| `programacion2` | Programación 2 | 4 | jueves, 7–9 | `programacion1` |
-| `calculo3` | Cálculo 3 | 4 | viernes, 7–9 | `calculo2` |
-| `estructuras` | Estructuras de datos | 3 | jueves, 8–10 | `programacion2`, `algebra` |
-| `proyecto` | Proyecto integrador | 3 | viernes, 8–10 | `calculo3`, `estructuras` |
+### 3. `sin_repetidos`
 
-Las horas son decimales: `8.5` significa 08:30; `8.30` no representa las 08:30.
+**Uso:** `sin_repetidos(Lista, Unicos) y sin_repetidos(Lista, Vistos, Unicos)`.
 
-### Historiales
-
-- **Ana:** ninguna materia aprobada.
-- **Juan:** `calculo1`, `algebra` y `programacion1`.
-- **Luisa:** las tres anteriores, `calculo2`, `fisica1` y `programacion2`.
-
-Los ejemplos del PDF ilustran el comportamiento con una base parcial. Los resultados de este README corresponden a los hechos reales de [datos.pl](datos.pl); por eso la lista de disponibles de Juan difiere del ejemplo del enunciado.
-
-## 4. Sistema de elegibilidad de matrícula
-
-### 4.1 `puede_tomar(Estudiante, Curso)`
-
-Comprueba que ambos estén registrados, recoge los prerrequisitos directos y verifica recursivamente que todos estén aprobados.
-
-- **Caso base:** una lista vacía de prerrequisitos se satisface.
-- **Paso recursivo:** comprobar `aprobado(Estudiante, Pre)` para la cabeza y continuar con la cola.
-- **Auxiliar:** `requisitos_aprobados/2`.
+Elimina duplicados conservando la primera aparición.
 
 ```prolog
-?- puede_tomar(juan, calculo2).
-true.
+sin_repetidos(Lista, Unicos) :-
+    sin_repetidos(Lista, [], Unicos).
 
-?- puede_tomar(ana, calculo2).
-false.
-
-?- puede_tomar(ana, calculo1).
-true.
-
-?- puede_tomar(desconocido, calculo1).
-false.
+sin_repetidos([], _, []).
+sin_repetidos([X|Resto], Vistos, Unicos) :-
+    ( pertenece(X, Vistos)
+    -> sin_repetidos(Resto, Vistos, Unicos)
+    ;  Unicos = [X|Cola],
+       sin_repetidos(Resto, [X|Vistos], Cola)
+    ).
 ```
 
-Juan cumple porque aprobó Cálculo 1 y Álgebra. Ana puede tomar un curso inicial aunque su historial esté vacío.
+**Cómo funciona:** La versión de dos argumentos inicia Vistos en []. La de tres termina con salida [] cuando no quedan elementos. Si X ya pertenece a Vistos, lo omite. Si no, construye Unicos = [X|Cola], agrega X a Vistos y procesa Resto para completar Cola.
 
-**Cumplir prerrequisitos y tener una materia pendiente son condiciones diferentes.** Por contrato, `puede_tomar(juan, calculo1)` también es verdadero. La exclusión de aprobados se realiza en `cursos_disponibles/2`.
+**Ejemplo o conexión:** sin_repetidos([a,b,a], U) produce U = [a,b]. Vistos es un acumulador interno, no la salida.
 
-Admite consultas con variables para enumerar estudiantes o cursos:
+**Para narrar:** «Guarda qué elementos ya vio y solo incorpora la primera aparición.»
+
+### 4. `prerrequisitos_directos`
+
+**Uso:** `prerrequisitos_directos(Curso, Requisitos)`.
+
+Reúne los prerrequisitos inmediatos de una materia.
 
 ```prolog
-?- puede_tomar(Estudiante, calculo2).
-Estudiante = juan ;
-Estudiante = luisa.
+prerrequisitos_directos(Curso, Requisitos) :-
+    findall(Pre, prerequisito(Curso, Pre), Requisitos).
 ```
 
-### 4.2 `cruce_horario(Curso1, Curso2)`
+**Cómo funciona:** findall(Pre, prerequisito(Curso,Pre), Requisitos) recoge cada Pre que satisface el hecho. Si no hay hechos, devuelve []. No recorre todavía prerrequisitos de prerrequisitos.
 
-Busca dos cursos distintos, exige el mismo día y compara sus intervalos:
+**Ejemplo o conexión:** Para calculo2 devuelve [calculo1,algebra].
 
-```text
-Inicio1 < Fin2
-y
-Inicio2 < Fin1
-```
+**Para narrar:** «Recoge los hechos directos; las comprobaciones se hacen después con recursividad.»
 
-Los intervalos se interpretan como `[Inicio, Fin)`: compartir únicamente un extremo es compatible.
+### 5. `puede_tomar`
+
+**Uso:** `puede_tomar(Estudiante, Curso)`.
+
+Comprueba que el estudiante cumpla todos los prerrequisitos directos.
 
 ```prolog
-?- cruce_horario(calculo2, fisica1).
-true.
-
-?- cruce_horario(calculo1, programacion1).
-false.
-
-?- cruce_horario(calculo1, algebra).
-false.
+puede_tomar(Estudiante, Curso) :-
+    estudiante(Estudiante),
+    curso(Curso, _, _),
+    prerrequisitos_directos(Curso, Requisitos),
+    requisitos_aprobados(Estudiante, Requisitos).
 ```
 
-Cálculo 2 y Física 1 coinciden el miércoles entre las 8 y las 9. Cálculo 1 termina a las 9 y Programación 1 empieza a las 9, así que no se cruzan. También permite enumerar pares con variables.
+**Cómo funciona:** estudiante/1 valida o enumera estudiantes registrados; curso/3 valida o enumera cursos. Los guiones bajos ignoran nombre y créditos. Luego recoge Requisitos y llama a requisitos_aprobados/2. Las comas exigen que se cumplan todas las condiciones.
 
-### 4.3 `horario_valido(ListaCursos)`
+**Ejemplo o conexión:** puede_tomar(juan,calculo2) es verdadero; para Ana es falso. También acepta una materia ya aprobada si cumple sus prerrequisitos.
 
-Recibe una lista concreta y finita de códigos. Comprueba que cada curso exista, tenga inicio menor que fin, no esté repetido y no se cruce con ninguno de los siguientes.
+**Para narrar:** «Valida estudiante y curso y exige todas las aprobaciones previas; aquí aún no excluye materias aprobadas.»
 
-- **Caso base:** `horario_valido([])`.
-- **Paso recursivo:** comparar la cabeza con toda la cola usando `sin_cruces/2` y validar después la cola.
+### 6. `requisitos_aprobados`
+
+**Uso:** `requisitos_aprobados(Estudiante, Requisitos)`.
+
+Verifica uno por uno los prerrequisitos contra los hechos aprobado/2.
 
 ```prolog
-?- horario_valido([calculo1, algebra, programacion1]).
-true.
-
-?- horario_valido([calculo1, algebra, introingenieria]).
-false.
-
-?- horario_valido([calculo1, calculo1]).
-false.
-
-?- horario_valido([inexistente]).
-false.
+requisitos_aprobados(_, []).
+requisitos_aprobados(Estudiante, [Pre|Resto]) :-
+    aprobado(Estudiante, Pre),
+    requisitos_aprobados(Estudiante, Resto).
 ```
 
-La segunda consulta demuestra que se comparan también cursos que no son adyacentes en la lista. Este predicado valida horarios; no recibe un estudiante ni comprueba su elegibilidad.
+**Cómo funciona:** El caso [] tiene éxito sin más verificaciones. En [Pre|Resto] comprueba aprobado(Estudiante,Pre) y sigue con Resto. Si una aprobación falta, falla la regla completa.
 
-### 4.4 `creditos_totales(ListaCursos, Total)`
+**Ejemplo o conexión:** Para Juan: [calculo1,algebra] → [algebra] → []. Ambos hechos aprobado existen.
 
-Suma créditos mediante recursividad:
+**Para narrar:** «La lista vacía es el caso base; cada llamada verifica una aprobación y reduce la lista.»
+
+### 7. `cruce_horario`
+
+**Uso:** `cruce_horario(Curso1, Curso2)`.
+
+Determina si dos cursos distintos coinciden en horario.
+
+```prolog
+cruce_horario(Curso1, Curso2) :-
+    curso(Curso1, _, _),
+    curso(Curso2, _, _),
+    dif(Curso1, Curso2),
+    horario(Curso1, Dia, Inicio1, Fin1),
+    horario(Curso2, Dia, Inicio2, Fin2),
+    Inicio1 < Fin2,
+    Inicio2 < Fin1.
+```
+
+**Cómo funciona:** Primero obtiene códigos concretos del catálogo; dif/2 evita comparar un curso consigo mismo. La variable Dia compartida exige el mismo día. Inicio1 < Fin2 e Inicio2 < Fin1 detectan superposición. Las desigualdades estrictas permiten horarios contiguos.
+
+**Ejemplo o conexión:** calculo2 (miércoles 7–9) y fisica1 (miércoles 8–10) se cruzan. calculo1 (lunes 7–9) y programacion1 (lunes 9–11) no.
+
+**Para narrar:** «Dos cursos se cruzan si son del mismo día y cada uno empieza antes de que el otro termine.»
+
+### 8. `horario_valido`
+
+**Uso:** `horario_valido(ListaCursos)`.
+
+Valida una lista concreta de cursos sin repeticiones ni cruces.
+
+```prolog
+horario_valido([]).
+horario_valido([Curso|Resto]) :-
+    curso(Curso, _, _),
+    horario(Curso, _, Inicio, Fin),
+    Inicio < Fin,
+    \+ pertenece(Curso, Resto),
+    sin_cruces(Curso, Resto),
+    horario_valido(Resto).
+```
+
+**Cómo funciona:** [] es válido. Para la cabeza verifica existencia, horario e Inicio < Fin. La negación de pertenece impide duplicados en Resto. sin_cruces compara esa cabeza con toda la cola; horario_valido vuelve a aplicar el proceso sobre la cola.
+
+**Ejemplo o conexión:** [calculo1,algebra,programacion1] es válido. [calculo1,algebra,introingenieria] falla aunque las materias que chocan no sean adyacentes.
+
+**Para narrar:** «Cada curso se compara con todos los siguientes, por eso se revisan todos los pares.»
+
+### 9. `sin_cruces`
+
+**Uso:** `sin_cruces(Curso, Lista)`.
+
+Comprueba que Curso no se cruce con ningún elemento de Lista.
+
+```prolog
+sin_cruces(_, []).
+sin_cruces(Curso, [Otro|Resto]) :-
+    \+ cruce_horario(Curso, Otro),
+    sin_cruces(Curso, Resto).
+```
+
+**Cómo funciona:** Con [] termina. Con [Otro|Resto], la negación de cruce_horario exige que la pareja sea compatible y luego recorre Resto. No valida por sí solo que todos los códigos tengan horarios correctos; esa validación la hacen sus llamadores.
+
+**Ejemplo o conexión:** Se usa tanto al validar una matrícula como al elegir materias de un semestre.
+
+**Para narrar:** «Mantiene fijo un curso y lo compara uno a uno con los demás.»
+
+### 10. `creditos_totales`
+
+**Uso:** `creditos_totales(ListaCursos, Total)`.
+
+Suma los créditos mediante recursividad.
 
 ```prolog
 creditos_totales([], 0).
@@ -218,245 +233,36 @@ creditos_totales([Curso|Resto], Total) :-
     Total is Creditos + Subtotal.
 ```
 
-```prolog
-?- creditos_totales([calculo1, algebra, programacion1], Total).
-Total = 11.
+**Cómo funciona:** [] suma 0. Para cada Curso obtiene Creditos, calcula primero el Subtotal de Resto y después evalúa Total is Creditos + Subtotal. is realiza la suma; = no evaluaría la expresión.
 
-?- creditos_totales([], Total).
-Total = 0.
-```
+**Ejemplo o conexión:** [calculo1,algebra,programacion1] baja hasta [] y regresa con 0 → 4 → 7 → 11. Cuenta duplicados si se le pasan.
 
-El caso base aporta 0. Al regresar de la recursión se suman 4 de Programación 1, 3 de Álgebra y 4 de Cálculo 1.
+**Para narrar:** «Al regresar de la recursión acumula los créditos de cada materia.»
 
-Cuenta cada aparición: `[calculo1, calculo1]` suma 8. Para validar una matrícula se debe comprobar además `horario_valido/1`. Un código desconocido hace fallar la suma.
+### 11. `cursos_disponibles`
 
-### 4.5 `cursos_disponibles(Estudiante, Disponibles)`
+**Uso:** `cursos_disponibles(Estudiante, Disponibles)`.
 
-Obtiene el catálogo y lo filtra recursivamente con `filtrar_disponibles/3`. Conserva una materia cuando el estudiante cumple sus prerrequisitos **y no la ha aprobado**.
+Devuelve materias habilitadas que todavía no están aprobadas.
 
 ```prolog
-?- cursos_disponibles(ana, Disponibles).
-Disponibles = [calculo1, algebra, programacion1, introingenieria].
-
-?- cursos_disponibles(juan, Disponibles).
-Disponibles = [introingenieria, calculo2, fisica1, programacion2].
+cursos_disponibles(Estudiante, Disponibles) :-
+    estudiante(Estudiante),
+    findall(Curso, curso(Curso, _, _), Catalogo),
+    filtrar_disponibles(Catalogo, Estudiante, Disponibles).
 ```
 
-El resultado conserva el orden del catálogo. Son materias disponibles individualmente: la lista completa puede contener cruces, como Cálculo 2 y Física 1.
+**Cómo funciona:** Verifica estudiante/1, reúne todos los códigos con findall/3 y delega el filtrado en filtrar_disponibles/3. Conserva el orden del catálogo.
 
-## 5. Sistema de rutas académicas
+**Ejemplo o conexión:** Para Juan: [introingenieria,calculo2,fisica1,programacion2]. La lista puede contener cruces.
 
-### 5.1 `cadena_prerequisitos(Curso, Cadena)`
+**Para narrar:** «Reúne el catálogo y obtiene las opciones disponibles individualmente para el estudiante.»
 
-Recorre las dependencias en profundidad y elimina repeticiones conservando la primera aparición.
+### 12. `filtrar_disponibles`
 
-```prolog
-?- cadena_prerequisitos(calculo1, Cadena).
-Cadena = [].
+**Uso:** `filtrar_disponibles(Catalogo, Estudiante, Disponibles)`.
 
-?- cadena_prerequisitos(calculo3, Cadena).
-Cadena = [calculo2, calculo1, algebra].
-
-?- cadena_prerequisitos(proyecto, Cadena).
-Cadena = [calculo3, calculo2, calculo1, algebra,
-          estructuras, programacion2, programacion1].
-```
-
-`cadena_desde/3` guarda los cursos visitados en la rama actual. Volver a encontrar uno significa que existe un ciclo y la consulta falla. Compartir un ancestro entre dos ramas, como Álgebra, sí es válido.
-
-La lista expresa el orden de recorrido; no es por sí misma un orden de matrícula. Por ejemplo, Cálculo 2 aparece antes que Cálculo 1 en la cadena anterior.
-
-### 5.2 `semestre_minimo(Curso, Semestre)`
-
-Calcula la profundidad de las dependencias:
-
-```text
-Sin prerrequisitos: semestre = 1.
-Con prerrequisitos: semestre = 1 + máximo de sus semestres mínimos.
-```
-
-`maximo_semestre/3` calcula el máximo manualmente. Su caso base devuelve 0, de modo que un curso inicial queda en 1.
-
-```prolog
-?- semestre_minimo(calculo1, S).
-S = 1.
-
-?- semestre_minimo(calculo3, S).
-S = 3.
-
-?- semestre_minimo(proyecto, S).
-S = 4.
-```
-
-Este cálculo considera las dependencias académicas. Los retrasos por cruces de horario se resuelven al construir la ruta.
-
-### 5.3 `ruta_academica(Estudiante, Cursos, Ruta)`
-
-Recibe un estudiante registrado y una lista concreta y finita de cursos objetivo. Devuelve términos `semestre(Numero, ListaCursos)`.
-
-El proceso es:
-
-1. Validar los objetivos y expandir los que no están aprobados con sus prerrequisitos.
-2. Eliminar duplicados y materias aprobadas.
-3. Validar el horario individual de cada curso pendiente.
-4. Recoger el historial en la lista de cursos completados.
-5. Recorrer los pendientes para seleccionar los de cada semestre.
-6. Incorporar los elegidos a completados únicamente para el siguiente semestre.
-7. Repetir hasta que no queden pendientes; omitir los semestres vacíos.
-
-Para elegir una materia se exige que llegue su semestre mínimo, estén completados todos sus prerrequisitos y no se cruce con las materias ya elegidas.
-
-#### Ejemplo completo: Ana quiere llegar a Proyecto integrador
-
-```prolog
-?- ruta_academica(ana, [proyecto], Ruta).
-Ruta = [semestre(1, [calculo1, algebra, programacion1]),
-        semestre(2, [calculo2, programacion2]),
-        semestre(3, [calculo3, estructuras]),
-        semestre(4, [proyecto])].
-```
-
-| Semestre | Materias | Razón |
-| --- | --- | --- |
-| 1 | Cálculo 1, Álgebra, Programación 1 | No tienen prerrequisitos y sus horarios son compatibles. |
-| 2 | Cálculo 2, Programación 2 | Sus prerrequisitos terminaron en el semestre anterior. |
-| 3 | Cálculo 3, Estructuras | Ya se completaron Cálculo 2, Programación 2 y Álgebra. |
-| 4 | Proyecto integrador | Se completaron Cálculo 3 y Estructuras. |
-
-Introducción a la ingeniería y Física 1 no aparecen porque no son objetivos ni prerrequisitos de Proyecto.
-
-#### Ejemplo con cruce
-
-```prolog
-?- ruta_academica(juan, [calculo2, fisica1], Ruta).
-Ruta = [semestre(2, [calculo2]), semestre(3, [fisica1])].
-```
-
-Ambas están habilitadas para Juan, pero se cruzan. Se prioriza Cálculo 2 por aparecer primero. Si se invierte el orden de los objetivos, Física 1 queda primero.
-
-#### Ejemplo con materias ya aprobadas
-
-```prolog
-?- ruta_academica(luisa, [calculo3], Ruta).
-Ruta = [semestre(3, [calculo3])].
-
-?- ruta_academica(juan, [calculo1, algebra], Ruta).
-Ruta = [].
-
-?- ruta_academica(ana, [], Ruta).
-Ruta = [].
-```
-
-Los números respetan `semestre_minimo/2`; **no representan cuántos semestres le faltan al estudiante desde hoy**. Por eso Cálculo 3 conserva el número 3 en la ruta de Luisa.
-
-## 6. Recursividad y auxiliares
-
-El procesamiento de listas y los cálculos del código de producción están implementados manualmente.
-
-| Auxiliares | Trabajo que realizan |
-| --- | --- |
-| `pertenece/2` | Buscar en una lista, avanzando por su cola; usa `dif/2` para distinguir elementos. |
-| `concatenar/3` | Unir listas reconstruyendo la primera recursivamente. |
-| `sin_repetidos/2`, `sin_repetidos/3` | Mantener una lista de vistos y conservar la primera aparición. |
-| `prerrequisitos_directos/2` | Recoger los hechos de prerrequisitos mediante `findall/3`. |
-| `requisitos_aprobados/2` | Comprobar cada prerrequisito contra el historial. |
-| `sin_cruces/2` | Comparar un curso con cada elemento de otra lista. |
-| `filtrar_disponibles/3` | Incluir o descartar cada curso del catálogo. |
-| `cadena_desde/3`, `expandir_requisitos/3` | Recorrer dependencias y detectar ciclos en la rama actual. |
-| `semestre_desde/3`, `maximo_semestre/3` | Recorrer dependencias y calcular el máximo recursivamente. |
-| `objetivos_pendientes/3`, `quitar_aprobados/3` | Expandir objetivos y retirar materias completadas. |
-| `validar_horarios/1` | Validar individualmente los horarios pendientes. |
-| `planificar/4` | Avanzar de un semestre al siguiente hasta vaciar los pendientes. |
-| `seleccionar_semestre/6` | Separar cursos elegidos y pendientes mientras acumula horarios ocupados. |
-| `habilitado_en/3`, `todos_completados/2` | Comprobar semestre mínimo y prerrequisitos completados. |
-
-`findall/3` se usa únicamente para recoger hechos del catálogo, los prerrequisitos y el historial. Los filtros, verificaciones y cálculos se realizan en reglas recursivas propias. No se usa `forall/2` en el código de producción ni agregaciones predefinidas para calcular créditos o máximos.
-
-El archivo de pruebas sí usa utilidades como `forall/2`, `sort/2` y `length/2` para contrastar resultados. Esas utilidades pertenecen al verificador, no a los algoritmos de la solución.
-
-### Sintaxis que aparece en el código
-
-| Elemento | Significado |
-| --- | --- |
-| `:-` | La cabeza de la regla se cumple si se satisface su cuerpo. |
-| `,` | Conjunción: deben satisfacerse ambos objetivos. |
-| `.` | Final de un hecho, regla o consulta. |
-| `[Cabeza\|Cola]` | Separación de una lista en primer elemento y resto. |
-| `[]` | Lista vacía, utilizada en casos base. |
-| `_` | Variable anónima cuyo valor no necesitamos conservar. |
-| `=` | Unificación; no realiza evaluación aritmética. |
-| `is` | Evalúa la expresión aritmética de la derecha. |
-| `dif(A, B)` | Exige que los términos sean distintos. |
-| `\+` | Negación por fallo: se cumple si no se puede demostrar el objetivo. |
-| `(Condicion -> Entonces ; SiNo)` | Condicional utilizado para filtrar, comparar y seleccionar. |
-| `findall(X, Objetivo, Lista)` | Reúne las soluciones de un objetivo en una lista. |
-
-En estas reglas, los elementos se concretan antes de las negaciones y comparaciones que lo necesitan. Las consultas con listas se deben hacer en los modos descritos; los predicados no constituyen un generador general de listas parcialmente instanciadas.
-
-## 7. Decisiones y límites
-
-- **Datos:** se supone un código único y un único bloque semanal por curso, con valores numéricos e inicio menor que fin. No se modelan varios grupos ni varias sesiones semanales.
-- **Historial:** los ejemplos son coherentes con los prerrequisitos. Una aprobación se trata como un curso completado antes del plan.
-- **Cursos iniciales:** necesitan un estudiante registrado, pero no aprobaciones previas.
-- **Cursos repetidos:** se rechazan en `horario_valido/1`; en una ruta se eliminan; la suma de créditos cuenta cada aparición.
-- **Objetivos y dependencias:** la ruta incorpora automáticamente los prerrequisitos pendientes. Esta es una decisión de implementación que permite pedir directamente una materia avanzada.
-- **Ciclos y referencias inexistentes:** hacen fallar los recorridos de dependencias cuando se encuentran en la cadena consultada. Un objetivo ya aprobado se omite sin recorrer su cadena.
-- **Horarios defectuosos:** la ruta rechaza cursos pendientes sin horario o con inicio mayor o igual que fin. Se presupone que el resto de los hechos está bien formado.
-- **Semestres:** los cursos elegidos solo pasan a completados en el siguiente semestre. No se permite tomar una materia junto con su prerrequisito.
-- **Selección:** se usa el orden de los pendientes para resolver conflictos. Se obtiene un plan válido, sin garantizar el menor número de semestres ni enumerar todos los planes posibles.
-- **Créditos:** no se limita la carga por semestre en la ruta de Prolog.
-- **Resultados negativos:** `false` comunica que la consulta no se satisface; el programa no devuelve un diagnóstico textual de la causa.
-- **Escala:** el catálogo de demostración es pequeño. Los recorridos vuelven a calcular dependencias compartidas; no se implementa memoización.
-
-## 8. Pruebas automatizadas
-
-Desde la raíz del repositorio:
-
-```sh
-swipl -q -s Prolog/pruebas.pl -g run_tests -t halt
-```
-
-Desde la carpeta `Prolog`:
-
-```sh
-swipl -q -s pruebas.pl -g run_tests -t halt
-```
-
-**Resultado verificado en la revisión del 1 de octubre de 2026: 51 pruebas aprobadas.**
-
-Se cubren los ocho predicados, consultas con variables, cursos desconocidos, estudiantes desconocidos, listas vacías, duplicados, cruces no adyacentes, extremos contiguos, ciclos, prerrequisitos inexistentes y horarios faltantes o invertidos.
-
-La última prueba recorre los **1.024 subconjuntos** del catálogo de diez materias para cada uno de los **tres estudiantes**: **3.072 rutas**. Comprueba que:
-
-- haya exactamente una solución por combinación;
-- aparezcan las materias pendientes necesarias, sin duplicados;
-- los prerrequisitos estén aprobados o en un semestre anterior;
-- se respete el semestre mínimo;
-- los semestres estén ordenados y no estén vacíos;
-- no existan cruces dentro de un semestre.
-
-El verificador contrasta el plan con las relaciones básicas; para el límite de semestre reutiliza `semestre_minimo/2`, que también tiene pruebas específicas. La cobertura exhaustiva corresponde a los subconjuntos del catálogo de ejemplo, no a todas las bases de datos posibles.
-
-Las pruebas agregan y retiran hechos temporales para simular datos defectuosos. No cambian los archivos de datos.
-
-## 9. Lectura del flujo de ejecución
-
-Esta sección conecta las reglas con el estado de sus argumentos. Los fragmentos son extractos de `proyectoHorario.pl`.
-
-### 9.1 Verificar una lista de prerrequisitos
-
-```prolog
-requisitos_aprobados(_, []).
-requisitos_aprobados(Estudiante, [Pre|Resto]) :-
-    aprobado(Estudiante, Pre),
-    requisitos_aprobados(Estudiante, Resto).
-```
-
-Para `puede_tomar(juan, calculo2)`, primero se recoge `[calculo1, algebra]`. La regla comprueba `aprobado(juan, calculo1)` y continúa con `[algebra]`; después comprueba Álgebra y llega a `[]`. El caso base permite terminar con éxito. Si falta una aprobación, la conjunción falla.
-
-`_` en el caso base indica que, una vez vacía la lista, no hace falta consultar nuevamente al estudiante. El registro del estudiante ya fue comprobado por `puede_tomar/2`.
-
-### 9.2 Incluir o descartar un curso
+Construye recursivamente la lista de disponibles.
 
 ```prolog
 filtrar_disponibles([], _, []).
@@ -468,26 +274,136 @@ filtrar_disponibles([Curso|Resto], Estudiante, Disponibles) :-
     filtrar_disponibles(Resto, Estudiante, Cola).
 ```
 
-La condición combina dos objetivos: cumplir los prerrequisitos y no tener la materia aprobada. Si ambos se cumplen, se construye una lista cuya cabeza es `Curso`; en caso contrario, el resultado es directamente `Cola`. En ambas ramas, la llamada final procesa los cursos restantes y completa esa cola.
+**Cómo funciona:** [] produce []. El condicional exige puede_tomar y ausencia de aprobado. Si se cumple, Disponibles = [Curso|Cola]; si falla, Disponibles = Cola. La llamada final procesa Resto y completa esa misma Cola en ambas ramas.
 
-No se modifica el catálogo ni se registra una matrícula: se construye el argumento de salida mediante unificación.
+**Ejemplo o conexión:** Cálculo 1 se descarta para Juan por estar aprobado; Cálculo 2 se conserva.
 
-### 9.3 Diferenciar la cadena y el semestre mínimo
+**Para narrar:** «Decide si conserva la cabeza y siempre continúa filtrando la cola.»
 
-Para Cálculo 3 se recorren estas dependencias:
+### 13. `cadena_prerequisitos`
 
-```text
-calculo3
-└── calculo2
-    ├── calculo1
-    └── algebra
+**Uso:** `cadena_prerequisitos(Curso, Cadena)`.
+
+Obtiene todos los prerrequisitos directos e indirectos sin duplicados.
+
+```prolog
+cadena_prerequisitos(Curso, Cadena) :-
+    cadena_desde(Curso, [], Repetidos),
+    sin_repetidos(Repetidos, Cadena).
 ```
 
-En `cadena_prerequisitos/2`, el objetivo es reunir códigos: primero Cálculo 2 y luego sus ancestros, dando `[calculo2, calculo1, algebra]`.
+**Cómo funciona:** Inicia cadena_desde con Visitados = [] y obtiene una lista que puede repetir ancestros. Luego sin_repetidos conserva solo su primera aparición. La cadena sigue el orden de recorrido, no el orden de matrícula.
 
-En `semestre_minimo/2`, el objetivo es calcular números: Cálculo 1 y Álgebra dan 1; Cálculo 2 da `1 + max(1, 1) = 2`; Cálculo 3 da `1 + 2 = 3`. Aquí `max` es notación explicativa: el código realiza la comparación recursivamente con `maximo_semestre/3`.
+**Ejemplo o conexión:** Para calculo3: [calculo2,calculo1,algebra].
 
-### 9.4 Preparar los pendientes de una ruta
+**Para narrar:** «Primero recorre todas las dependencias y después elimina las repeticiones.»
+
+### 14. `cadena_desde`
+
+**Uso:** `cadena_desde(Curso, Visitados, Cadena)`.
+
+Controla el recorrido de una materia y detecta ciclos.
+
+```prolog
+cadena_desde(Curso, Visitados, Cadena) :-
+    curso(Curso, _, _),
+    \+ pertenece(Curso, Visitados),
+    prerrequisitos_directos(Curso, Directos),
+    expandir_requisitos(Directos, [Curso|Visitados], Cadena).
+```
+
+**Cómo funciona:** Comprueba que Curso exista y que no esté en Visitados. Recoge sus Directos y los expande pasando [Curso|Visitados]. Visitados contiene la rama actual, no todos los nodos de todo el recorrido.
+
+**Ejemplo o conexión:** Si A requiere B y B requiere A, al regresar a A ya está visitado y la consulta falla.
+
+**Para narrar:** «Guarda el camino actual para evitar volver a entrar en un curso de la misma rama.»
+
+### 15. `expandir_requisitos`
+
+**Uso:** `expandir_requisitos(Directos, Visitados, Cadena)`.
+
+Expande recursivamente una lista de prerrequisitos.
+
+```prolog
+expandir_requisitos([], _, []).
+expandir_requisitos([Pre|Resto], Visitados, [Pre|Cadena]) :-
+    cadena_desde(Pre, Visitados, Ancestros),
+    expandir_requisitos(Resto, Visitados, Otros),
+    concatenar(Ancestros, Otros, Cadena).
+```
+
+**Cómo funciona:** El caso [] produce []. Para Pre, la cabeza de salida [Pre|Cadena] lo incorpora. cadena_desde obtiene sus Ancestros; la siguiente llamada obtiene Otros a partir de Resto. concatenar une Ancestros y Otros para completar Cadena. Ambas ramas reciben el mismo Visitados del padre.
+
+**Ejemplo o conexión:** Álgebra puede aparecer por las ramas de Cálculo y Estructuras sin ser un ciclo; los duplicados se eliminan después.
+
+**Para narrar:** «Agrega cada prerrequisito, desciende por sus ancestros y luego continúa con sus hermanos.»
+
+### 16. `semestre_minimo`
+
+**Uso:** `semestre_minimo(Curso, Semestre)`.
+
+Expone el cálculo del primer semestre posible según dependencias.
+
+```prolog
+semestre_minimo(Curso, Semestre) :-
+    semestre_desde(Curso, [], Semestre).
+```
+
+**Cómo funciona:** Llama a semestre_desde/3 con una lista vacía de visitados. Este predicado no usa el historial del estudiante ni resuelve cruces de horario.
+
+**Ejemplo o conexión:** calculo1 da 1, calculo3 da 3 y proyecto da 4.
+
+**Para narrar:** «Calcula la profundidad académica de la materia a partir de sus prerrequisitos.»
+
+### 17. `semestre_desde`
+
+**Uso:** `semestre_desde(Curso, Visitados, Semestre)`.
+
+Calcula el semestre de un curso y evita ciclos.
+
+```prolog
+semestre_desde(Curso, Visitados, Semestre) :-
+    curso(Curso, _, _),
+    \+ pertenece(Curso, Visitados),
+    prerrequisitos_directos(Curso, Directos),
+    maximo_semestre(Directos, [Curso|Visitados], Maximo),
+    Semestre is Maximo + 1.
+```
+
+**Cómo funciona:** Valida existencia y ausencia en Visitados. Recoge Directos y obtiene su máximo semestre pasando el camino actualizado. Semestre is Maximo + 1 coloca el curso después de todos ellos.
+
+**Ejemplo o conexión:** Sin prerrequisitos, el máximo auxiliar es 0 y el semestre queda en 1.
+
+**Para narrar:** «La materia queda un semestre después del prerrequisito que más tarde puede completarse.»
+
+### 18. `maximo_semestre`
+
+**Uso:** `maximo_semestre(Directos, Visitados, Maximo)`.
+
+Calcula manualmente el mayor semestre de una lista de prerrequisitos.
+
+```prolog
+maximo_semestre([], _, 0).
+maximo_semestre([Pre|Resto], Visitados, Maximo) :-
+    semestre_desde(Pre, Visitados, SemestrePre),
+    maximo_semestre(Resto, Visitados, MaximoResto),
+    ( SemestrePre > MaximoResto
+    -> Maximo = SemestrePre
+    ;  Maximo = MaximoResto
+    ).
+```
+
+**Cómo funciona:** [] devuelve 0. Calcula SemestrePre para la cabeza y MaximoResto para la cola. El condicional compara ambos números y unifica Maximo con el mayor. La comparación > no suma; la suma de 1 ocurre en semestre_desde.
+
+**Ejemplo o conexión:** Cálculo 1 y Álgebra dan 1; su máximo es 1 y Cálculo 2 queda en 2.
+
+**Para narrar:** «Combina dos recursiones: profundiza en una dependencia y recorre las dependencias restantes.»
+
+### 19. `ruta_academica`
+
+**Uso:** `ruta_academica(Estudiante, Cursos, Ruta)`.
+
+Coordina la construcción del plan por semestres.
 
 ```prolog
 ruta_academica(Estudiante, Cursos, Ruta) :-
@@ -500,64 +416,409 @@ ruta_academica(Estudiante, Cursos, Ruta) :-
     planificar(Pendientes, Aprobados, 1, Ruta).
 ```
 
-Con Ana y el objetivo `[proyecto]`, los pendientes quedan en este orden:
+**Cómo funciona:** En orden: valida estudiante; expande objetivos pendientes en Necesarios; elimina repetidos en Unicos; quita aprobados en Pendientes; valida sus horarios; recoge el historial en Aprobados; inicia planificar con semestre 1. Ruta será una lista de semestre(Numero,Cursos).
+
+**Ejemplo o conexión:** ruta_academica(ana,[proyecto],R) agrega las materias previas necesarias automáticamente.
+
+**Para narrar:** «Esta regla conecta las etapas: preparar las materias pendientes y distribuirlas por semestres.»
+
+### 20. `objetivos_pendientes`
+
+**Uso:** `objetivos_pendientes(Cursos, Estudiante, Necesarios)`.
+
+Expande los objetivos que el estudiante todavía no aprobó.
+
+```prolog
+objetivos_pendientes([], _, []).
+objetivos_pendientes([Curso|Resto], Estudiante, Necesarios) :-
+    curso(Curso, _, _),
+    ( aprobado(Estudiante, Curso)
+    -> Necesarios = Otros
+    ;  cadena_prerequisitos(Curso, Cadena),
+       concatenar([Curso|Cadena], Otros, Necesarios)
+    ),
+    objetivos_pendientes(Resto, Estudiante, Otros).
+```
+
+**Cómo funciona:** [] produce []. Valida el Curso de la cabeza. Si está aprobado, Necesarios se unifica directamente con Otros. Si no, obtiene Cadena y concatena [Curso|Cadena] con Otros. La última llamada calcula Otros procesando Resto: esta variable puede quedar pendiente de completar por unificación.
+
+**Ejemplo o conexión:** [calculo3] para Ana se amplía a [calculo3,calculo2,calculo1,algebra]. Un objetivo ya aprobado se omite sin recorrer su cadena.
+
+**Para narrar:** «Cada objetivo pendiente aporta la materia y sus dependencias; los aprobados se saltan.»
+
+### 21. `quitar_aprobados`
+
+**Uso:** `quitar_aprobados(Lista, Estudiante, Pendientes)`.
+
+Retira aprobaciones de toda la lista expandida.
+
+```prolog
+quitar_aprobados([], _, []).
+quitar_aprobados([Curso|Resto], Estudiante, Pendientes) :-
+    ( aprobado(Estudiante, Curso)
+    -> Pendientes = Cola
+    ;  Pendientes = [Curso|Cola]
+    ),
+    quitar_aprobados(Resto, Estudiante, Cola).
+```
+
+**Cómo funciona:** [] produce []. Si Curso está aprobado, Pendientes = Cola; si no, Pendientes = [Curso|Cola]. Continúa con Resto. Es necesario porque las cadenas pueden incluir prerrequisitos ya aprobados aunque el objetivo no lo esté.
+
+**Ejemplo o conexión:** La cadena de Cálculo 3 para Luisa incluye materias previas, pero el filtro deja solo calculo3.
+
+**Para narrar:** «Limpia las aprobaciones que aparecieron al expandir las dependencias.»
+
+### 22. `validar_horarios`
+
+**Uso:** `validar_horarios(Pendientes)`.
+
+Verifica que cada curso tenga un horario individual válido.
+
+```prolog
+validar_horarios([]).
+validar_horarios([Curso|Resto]) :-
+    horario_valido([Curso]),
+    validar_horarios(Resto).
+```
+
+**Cómo funciona:** El caso [] termina. horario_valido([Curso]) revisa una lista de un solo elemento, luego continúa con Resto. No exige compatibilidad de todos los pendientes a la vez: pueden distribuirse en semestres diferentes.
+
+**Ejemplo o conexión:** Cálculo 2 y Física 1 pueden pasar esta validación aunque se crucen entre sí.
+
+**Para narrar:** «Aquí comprueba cada horario; los cruces entre materias se resuelven al seleccionar cada semestre.»
+
+### 23. `planificar`
+
+**Uso:** `planificar(Pendientes, Completados, Semestre, Ruta)`.
+
+Construye recursivamente la secuencia de semestres.
+
+```prolog
+planificar([], _, _, []).
+planificar([Curso|Resto], Completados, Semestre, Ruta) :-
+    seleccionar_semestre([Curso|Resto], Completados, Semestre, [],
+                         Elegidos, Pendientes),
+    Siguiente is Semestre + 1,
+    concatenar(Elegidos, Completados, NuevosCompletados),
+    ( Elegidos = []
+    -> Ruta = Cola
+    ;  Ruta = [semestre(Semestre, Elegidos)|Cola]
+    ),
+    planificar(Pendientes, NuevosCompletados, Siguiente, Cola).
+```
+
+**Cómo funciona:** Si no hay pendientes, la ruta restante es []. Si hay, seleccionar_semestre parte con Ocupados = [] y devuelve Elegidos y Pendientes nuevos. Incrementa Semestre; concatena Elegidos y Completados. Si Elegidos = [], omite ese semestre en la salida; si no, agrega semestre(Semestre,Elegidos). Repite con los pendientes y completados actualizados.
+
+**Ejemplo o conexión:** Puede avanzar por un semestre vacío para respetar semestre_minimo. Los cursos recién elegidos solo se consideran completados en la siguiente selección.
+
+**Para narrar:** «En cada vuelta arma un semestre, actualiza el estado y continúa hasta ubicar todas las materias.»
+
+### 24. `seleccionar_semestre`
+
+**Uso:** `seleccionar_semestre(Lista, Completados, Semestre, Ocupados, Elegidos, Pendientes)`.
+
+Separa los cursos que caben en el semestre de los que deben esperar.
+
+```prolog
+seleccionar_semestre([], _, _, _, [], []).
+seleccionar_semestre([Curso|Resto], Completados, Semestre, Ocupados,
+                      Elegidos, Pendientes) :-
+    ( habilitado_en(Curso, Completados, Semestre),
+      sin_cruces(Curso, Ocupados)
+    -> Elegidos = [Curso|MasElegidos],
+       seleccionar_semestre(Resto, Completados, Semestre, [Curso|Ocupados],
+                            MasElegidos, Pendientes)
+    ;  Pendientes = [Curso|MasPendientes],
+       seleccionar_semestre(Resto, Completados, Semestre, Ocupados,
+                            Elegidos, MasPendientes)
+    ).
+```
+
+**Cómo funciona:** Los primeros cuatro argumentos representan el estado de entrada; los últimos dos son listas de salida. El caso [] termina con ambas salidas vacías. Para Curso exige habilitado_en y sin_cruces con Ocupados. Si cumple, lo añade a Elegidos y a Ocupados. Si falla, lo añade a Pendientes. Ambas ramas recorren Resto manteniendo Completados fijo.
+
+**Ejemplo o conexión:** Ocupados cambia dentro del semestre; Completados solo cambia entre semestres. Ante un cruce gana el primer curso habilitado encontrado.
+
+**Para narrar:** «Elige una materia solo si cumple sus dependencias y cabe en el horario del semestre actual.»
+
+### 25. `habilitado_en`
+
+**Uso:** `habilitado_en(Curso, Completados, Semestre)`.
+
+Comprueba si académicamente una materia puede ubicarse ahora.
+
+```prolog
+habilitado_en(Curso, Completados, Semestre) :-
+    semestre_minimo(Curso, Minimo),
+    Semestre >= Minimo,
+    prerrequisitos_directos(Curso, Directos),
+    todos_completados(Directos, Completados).
+```
+
+**Cómo funciona:** Obtiene Minimo y exige Semestre >= Minimo. Recoge los prerrequisitos directos y llama a todos_completados/2. La compatibilidad horaria se comprueba aparte, en seleccionar_semestre.
+
+**Ejemplo o conexión:** Cumplir el semestre mínimo no basta si un prerrequisito se atrasó por un cruce.
+
+**Para narrar:** «Exige tanto el número mínimo de semestre como haber completado realmente las materias previas del plan.»
+
+### 26. `todos_completados`
+
+**Uso:** `todos_completados(Directos, Completados)`.
+
+Verifica prerrequisitos contra el estado local del plan.
+
+```prolog
+todos_completados([], _).
+todos_completados([Pre|Resto], Completados) :-
+    pertenece(Pre, Completados),
+    todos_completados(Resto, Completados).
+```
+
+**Cómo funciona:** [] tiene éxito. Para [Pre|Resto], pertenece comprueba Pre en Completados y luego se procesa Resto. Se diferencia de requisitos_aprobados: aquel consulta hechos aprobado/2; este consulta una lista que incluye también lo planificado en semestres anteriores.
+
+**Ejemplo o conexión:** No agrega hechos aprobado/2: simula el avance académico dentro de la consulta.
+
+**Para narrar:** «Comprueba que cada prerrequisito esté en el historial o en un semestre anterior del plan.»
+
+## Ejemplo completo para mostrar el resultado
+
+Desde la raíz del repositorio, abre la consola:
+
+```sh
+swipl -s Prolog/proyectoHorario.pl
+```
+
+El indicador `?-` lo muestra la consola; escribe solo la consulta que le sigue.
+
+```prolog
+?- ruta_academica(ana, [proyecto], Ruta).
+Ruta = [semestre(1, [calculo1, algebra, programacion1]),
+        semestre(2, [calculo2, programacion2]),
+        semestre(3, [calculo3, estructuras]),
+        semestre(4, [proyecto])].
+```
+
+Tras expandir objetivos y eliminar repetidos, los pendientes de Ana son:
 
 ```prolog
 [proyecto, calculo3, calculo2, calculo1, algebra,
  estructuras, programacion2, programacion1]
 ```
 
-Ana tiene `Aprobados = []`. La lista de pendientes no está ordenada por semestre: el selector la recorre y decide cuáles puede elegir según las condiciones del semestre actual.
-
-### 9.5 Entender los seis argumentos del selector
-
-```prolog
-seleccionar_semestre(PendientesEntrada, Completados, Semestre,
-                     Ocupados, Elegidos, PendientesSalida)
-```
-
-Los nombres anteriores describen los papeles de los argumentos; la implementación usa patrones de cabeza y cola para procesarlos.
-
-| Argumento | Papel |
-| --- | --- |
-| Pendientes de entrada | Cursos que aún se deben ubicar. |
-| Completados | Historial más cursos de semestres anteriores; permanece fijo durante esta selección. |
-| Semestre | Número del semestre que se está construyendo. |
-| Ocupados | Cursos ya elegidos en este recorrido; se usa para detectar cruces. |
-| Elegidos | Lista de salida con los cursos seleccionados para este semestre. |
-| Pendientes de salida | Lista de salida con los cursos aplazados. |
-
-La condición de selección es:
-
-```prolog
-habilitado_en(Curso, Completados, Semestre),
-sin_cruces(Curso, Ocupados)
-```
-
-Si se cumple, el curso se añade a elegidos y ocupados. Si falla, se conserva en pendientes. Cada rama continúa con el resto de la lista.
-
-### 9.6 Avanzar al siguiente semestre
-
-En la primera selección de Ana, Proyecto, Cálculo 3 y Cálculo 2 se aplazan; se eligen Cálculo 1 y Álgebra. Estructuras y Programación 2 también se aplazan, y se elige Programación 1.
-
-Aunque Cálculo 1 y Álgebra ya hayan sido elegidos, no cuentan como completados durante ese mismo semestre. Esta separación impide aprobar un prerrequisito y cursar su dependiente simultáneamente.
-
-Después, `planificar/4` ejecuta:
-
-```prolog
-Siguiente is Semestre + 1,
-concatenar(Elegidos, Completados, NuevosCompletados)
-```
-
-La llamada recursiva usa los pendientes que quedaron, los nuevos completados y el siguiente número. En el caso de Ana:
-
-| Estado al terminar la selección | Elegidos | Pendientes para continuar |
+| Selección | Elegidos | Pendientes para la siguiente llamada |
 | --- | --- | --- |
-| Semestre 1 | `[calculo1, algebra, programacion1]` | `[proyecto, calculo3, calculo2, estructuras, programacion2]` |
-| Semestre 2 | `[calculo2, programacion2]` | `[proyecto, calculo3, estructuras]` |
-| Semestre 3 | `[calculo3, estructuras]` | `[proyecto]` |
-| Semestre 4 | `[proyecto]` | `[]` |
+| Semestre 1 | Cálculo 1, Álgebra, Programación 1 | Proyecto, Cálculo 3, Cálculo 2, Estructuras, Programación 2 |
+| Semestre 2 | Cálculo 2, Programación 2 | Proyecto, Cálculo 3, Estructuras |
+| Semestre 3 | Cálculo 3, Estructuras | Proyecto |
+| Semestre 4 | Proyecto | Ninguno: se alcanza el caso base |
 
-Al alcanzar `planificar([], _, _, [])`, no quedan cursos y termina la construcción. Si un semestre no tiene elegidos, se avanza el número sin agregar un término vacío a la ruta.
+Al explicar la tabla, señala `seleccionar_semestre` para la elección y `planificar` para el avance. Las listas representan un plan hipotético; no se insertan aprobaciones en la base.
 
-`NuevosCompletados` es una lista local de la consulta. El plan propuesto **no agrega hechos `aprobado/2` a la base**: representa lo que se consideraría completado al avanzar dentro del plan.
+Otros dos ejemplos permiten explicar los límites sin extenderse:
+
+```prolog
+?- ruta_academica(juan, [calculo2, fisica1], R).
+R = [semestre(2, [calculo2]), semestre(3, [fisica1])].
+
+?- ruta_academica(luisa, [calculo3], R).
+R = [semestre(3, [calculo3])].
+```
+
+El primero separa dos cursos por un cruce. El segundo conserva el semestre mínimo académico: no significa que a Luisa le falten tres semestres. La ruta respeta el orden de selección y no garantiza minimizar la duración ni limita créditos por semestre.
+
+## Archivo 2: pruebas.pl
+
+Este archivo verifica el comportamiento del programa. Los auxiliares de pruebas no forman parte del algoritmo que genera la ruta.
+
+### 1. Carga, biblioteca y predicados dinámicos
+
+```prolog
+:- ensure_loaded('proyectoHorario.pl').
+:- use_module(library(plunit)).
+:- dynamic curso/3, horario/4, prerequisito/2, aprobado/2.
+:- begin_tests(horarios_prolog).
+```
+
+- `ensure_loaded` carga el programa y, a través de él, los datos.
+- `use_module` carga el sistema de pruebas de SWI-Prolog.
+- `dynamic` permite agregar y retirar hechos temporalmente durante las pruebas de datos defectuosos.
+- `begin_tests` abre el grupo; `end_tests`, al final del archivo, lo cierra.
+
+**Para narrar:** «Este segundo archivo carga el programa y prepara pruebas que comparan su comportamiento con resultados esperados.»
+
+### 2. Cómo leer test y sus opciones
+
+```prolog
+test(sin_prerrequisitos) :- puede_tomar(ana, calculo1).
+test(faltan_prerrequisitos, [fail]) :- puede_tomar(ana, calculo2).
+test(creditos_varios, true(T == 11)) :-
+    creditos_totales([calculo1,algebra,programacion1], T).
+```
+
+| Construcción | Qué verifica o hace |
+| --- | --- |
+| `test(Nombre) :- Consulta` | Espera que la consulta tenga éxito. |
+| `[fail]` | Espera que falle; ese fallo significa que la prueba pasó. |
+| `true(T == 11)` | Comprueba el valor obtenido; `==` compara términos sin unificarlos. |
+| `[nondet]` | Permite que el éxito deje puntos de elección; no obliga a producir varias respuestas. |
+| `set(C == [...])` | Recoge las soluciones y las compara como conjunto. |
+| `setup(...)` | Prepara datos antes del caso. |
+| `cleanup(...)` | Retira los datos temporales después del caso. |
+| `assertz(...)` | Inserta un hecho al final del predicado en memoria. |
+| `retractall(...)` | Elimina todos los hechos que coinciden con el patrón indicado. |
+| `user:` | Dirige el cambio a los predicados del programa cargados en el módulo user. |
+| `assertion(Condicion)` | Comprueba una propiedad dentro de una prueba. |
+
+Por ejemplo, `falta_solo_un_prerrequisito` agrega temporalmente que Ana aprobó Cálculo 1. La consulta para Cálculo 2 debe seguir fallando porque aún falta Álgebra. Después elimina la aprobación temporal.
+
+### 3. Recorrido de los casos, en orden
+
+| Bloque de pruebas | Propiedad que comprueba |
+| --- | --- |
+| Elegibilidad y disponibles | Cursos iniciales, todos o algunos prerrequisitos, códigos desconocidos, estudiantes desconocidos, aprobados y consultas con variables. |
+| Cruces | Superposición parcial, simetría, extremos contiguos, días distintos, exclusión del mismo curso y enumeración de pares. |
+| Horarios y créditos | Lista vacía, compatibilidad, conflicto no adyacente, repeticiones, cursos inexistentes y suma esperada. |
+| Cadenas y semestres | Ausencia de prerrequisitos, dependencias transitivas, ancestro compartido, varias ramas y semestre mínimo. |
+| Rutas | Objetivos vacíos o aprobados, expansión automática, cruces, prerrequisitos en semestres anteriores, duplicados y entradas desconocidas. |
+| Datos defectuosos | Ciclos, prerrequisitos inexistentes, horarios ausentes y horarios invertidos. |
+
+Cada `test` es un caso declarativo, no un nuevo algoritmo del sistema experto. Para el video basta mostrar cómo se leen un caso positivo, uno negativo y uno con resultado; el resto aplica el mismo patrón.
+
+### 4. crear_ciclo/0 y borrar_ciclo/0
+
+`crear_ciclo` agrega los cursos ficticios `ciclo_a` y `ciclo_b` y dos prerrequisitos opuestos: A requiere B y B requiere A. No recibe argumentos.
+
+`borrar_ciclo` retira ambos cursos y sus relaciones. Las opciones `setup(crear_ciclo)` y `cleanup(borrar_ciclo)` aíslan cada caso. Las pruebas esperan que cadena, semestre mínimo y ruta fallen al encontrar el ciclo.
+
+**Para narrar:** «Se crea un ciclo temporal para comprobar que los recorridos lo detectan y luego se limpia la base.»
+
+### 5. subconjunto/2
+
+```prolog
+subconjunto([], []).
+subconjunto([X|Xs], [X|Ys]) :- subconjunto(Xs, Ys).
+subconjunto([_|Xs], Ys) :- subconjunto(Xs, Ys).
+```
+
+**Argumentos:** catálogo de entrada y subconjunto generado.
+
+La primera cláusula termina. La segunda incluye la cabeza; la tercera la omite. Mediante backtracking se exploran ambas decisiones para cada curso. Con diez cursos aparecen 2 elevado a 10, es decir, 1.024 subconjuntos, incluido el vacío.
+
+**Para narrar:** «Este generador permite probar todas las combinaciones de objetivos del catálogo.»
+
+### 6. ancestro/2
+
+```prolog
+ancestro(Curso, Pre) :- prerequisito(Curso, Pre).
+ancestro(Curso, Pre) :- prerequisito(Curso, Directo), ancestro(Directo, Pre).
+```
+
+**Argumentos:** curso consultado y prerrequisito directo o indirecto encontrado.
+
+La primera cláusula encuentra una dependencia directa. La segunda baja por un prerrequisito y continúa buscando. Sirve para calcular qué materias deberían estar en el plan sin utilizar los auxiliares del planificador.
+
+Este auxiliar de pruebas presupone el catálogo sin ciclos; no lleva Visitados. Los ciclos temporales se retiran antes de la comprobación masiva.
+
+**Para narrar:** «Se vuelven a obtener las dependencias desde los hechos para contrastar lo que generó la ruta.»
+
+### 7. verificar_ruta/3
+
+**Argumentos:** estudiante, objetivos originales y ruta que se quiere comprobar.
+
+El bloque se lee por etapas:
+
+1. `findall` y dos llamadas a `member` recorren los semestres y sus listas para reunir todos los cursos en `Planeados`.
+2. `sort(Planeados, Unicos)` ordena y elimina duplicados. Exigir que ambas listas tengan la misma longitud comprueba que no había cursos repetidos.
+3. Otro `findall` obtiene los objetivos no aprobados y sus ancestros pendientes. `sort` normaliza esa lista en `Esperados`.
+4. `assertion(Unicos == Esperados)` verifica que no sobren ni falten materias.
+5. Recoge los números de semestre y los compara con su versión ordenada y sin repetidos: deben aparecer en orden estricto.
+6. Un `forall` recorre cada semestre y exige que su lista no esté vacía.
+7. Otro recorre cada curso: no debe estar aprobado y su número debe ser al menos el de `semestre_minimo`.
+8. Para cada prerrequisito exige una de dos posibilidades: ya está aprobado, o aparece en un semestre anterior de la ruta.
+9. Finalmente recorre pares del mismo día y comprueba `FA =< IB ; FB =< IA`: uno debe terminar antes o justo cuando empieza el otro.
+
+Aquí `;` expresa alternativas lógicas; `=<` significa menor o igual; `\=` exige que dos términos no puedan unificarse en ese momento.
+
+El verificador usa utilidades predefinidas en las pruebas; el procesamiento del código de producción sigue siendo manual y recursivo. Reutiliza `semestre_minimo/2` para el límite académico, por lo que esa comprobación no es independiente de dicho predicado; este cuenta además con casos específicos.
+
+**Para narrar:** «El verificador comprueba materias exactas, ausencia de duplicados, orden de semestres, dependencias anteriores y compatibilidad horaria.»
+
+### 8. rutas_de_todos_los_subconjuntos
+
+Recoge el catálogo con `findall`. El `forall` exterior combina cada uno de los estudiantes `[ana,juan,luisa]` con cada subconjunto generado.
+
+Para cada combinación:
+
+- `findall(R, ruta_academica(E,Objetivos,R), Soluciones)` reúne todas las rutas obtenidas.
+- `assertion(Soluciones = [_])` exige una lista con exactamente una solución.
+- `Soluciones = [Ruta]` obtiene esa única ruta.
+- `verificar_ruta` comprueba sus propiedades.
+
+Se verifican **3 × 1.024 = 3.072 rutas**. La cobertura es exhaustiva para los subconjuntos de este catálogo y estos tres historiales, no para cualquier base de datos posible ni para todas las permutaciones de objetivos.
+
+**Para narrar:** «La última prueba genera 3.072 casos y exige una única ruta válida para cada uno.»
+
+### 9. Ejecutar las pruebas
+
+Desde la raíz del repositorio:
+
+```sh
+swipl -q -s Prolog/pruebas.pl -g run_tests -t halt
+```
+
+`-q` reduce mensajes iniciales; `-s` carga el archivo; `-g run_tests` ejecuta las pruebas y `-t halt` termina la sesión al llegar al objetivo final.
+
+En la revisión del 1 de octubre de 2026 pasaron las 51 pruebas. Una de ellas incluye las 3.072 rutas anteriores. Para grabar la demostración, ejecuta el comando y muestra su resultado actual.
+
+## Guion breve para grabar hasta cinco minutos
+
+La explicación anterior es el material de apoyo completo. El siguiente texto agrupa auxiliares para que el video pueda ser breve. Los tiempos son orientativos: ensaya la lectura y los desplazamientos antes de grabar.
+
+### 0:00–0:20 — Inicio y auxiliares de listas
+
+**Mostrar:** carga de datos, pertenece, concatenar y sin_repetidos.
+
+> Este programa resuelve la elegibilidad de matrícula y construye rutas académicas. Primero carga los hechos. Los auxiliares recorren listas: pertenece busca un elemento, concatenar une dos listas y sin_repetidos conserva la primera aparición usando una lista de elementos vistos.
+
+### 0:20–0:55 — Elegibilidad
+
+**Mostrar:** prerrequisitos_directos, puede_tomar y requisitos_aprobados.
+
+> Prerrequisitos directos recoge los hechos con findall. Puede tomar comprueba que existan estudiante y curso y después verifica todos los prerrequisitos recursivamente. La lista vacía es el caso base. En cada paso se exige la aprobación de la cabeza y se continúa con la cola. Por eso Juan puede tomar Cálculo 2 y Ana todavía no. Esta regla comprueba prerrequisitos; la exclusión de materias aprobadas se hace después.
+
+### 0:55–1:30 — Horarios y créditos
+
+**Mostrar:** cruce_horario hasta creditos_totales.
+
+> El cruce exige cursos distintos, el mismo día y dos desigualdades: cada clase debe empezar antes de que termine la otra. Los horarios contiguos son compatibles. Horario válido revisa existencia, duración y duplicados, compara la cabeza con toda la cola mediante sin cruces y repite el proceso. Créditos totales llega al caso base cero y, al regresar, suma los créditos de cada materia.
+
+### 1:30–1:50 — Disponibles
+
+**Mostrar:** cursos_disponibles y filtrar_disponibles.
+
+> Cursos disponibles recoge el catálogo y lo filtra. Si la materia cumple los prerrequisitos y no está aprobada, se agrega a la salida; de lo contrario se omite. Ambas ramas continúan con el resto de la lista. Estas materias están disponibles individualmente, pero pueden cruzarse entre sí.
+
+### 1:50–2:35 — Dependencias y semestre mínimo
+
+**Mostrar:** cadena_prerequisitos hasta maximo_semestre.
+
+> Cadena de prerrequisitos recorre las dependencias en profundidad y elimina duplicados. Cadena desde guarda los visitados de la rama actual para detectar ciclos. Expandir requisitos incorpora cada dependencia, recorre sus ancestros y continúa con las restantes. Semestre mínimo usa un recorrido similar: calcula manualmente el mayor semestre de los prerrequisitos y suma uno. Sin prerrequisitos, el máximo es cero y la materia queda en primero. Así Cálculo 3 tiene semestre mínimo tres.
+
+### 2:35–4:15 — Preparación y planificación
+
+**Mostrar:** ruta_academica y desplazar hasta todos_completados; terminar con la consulta de Ana.
+
+> Ruta académica coordina el proceso. Objetivos pendientes agrega las dependencias de las materias solicitadas; después se eliminan duplicados y aprobadas. Validar horarios comprueba cada horario individualmente, porque los cursos pueden quedar en semestres distintos.
+>
+> Planificar construye un semestre a la vez. Seleccionar semestre recorre los pendientes y separa elegidos de aplazados. Para elegir una materia, habilitado en exige alcanzar su semestre mínimo y tener todos sus prerrequisitos en completados. También debe ser compatible con los cursos ocupados del semestre.
+>
+> Ocupados cambia al elegir cada materia, pero completados permanece fijo durante esa selección. Solo al pasar al semestre siguiente se agregan los elegidos a completados. Esto evita cursar una materia junto con su prerrequisito. Cuando ya no quedan pendientes, se alcanza el caso base.
+>
+> Para Ana y el objetivo Proyecto, primero se ubican Cálculo 1, Álgebra y Programación 1; después Cálculo 2 y Programación 2; luego Cálculo 3 y Estructuras; finalmente Proyecto. El plan no modifica los hechos de aprobaciones y no busca necesariamente el menor número de semestres.
+
+### 4:15–5:00 — Pruebas y cierre
+
+**Mostrar:** apertura de pruebas.pl, ejemplos test, auxiliares y comando de ejecución.
+
+> El segundo archivo contiene las pruebas. Un caso puede exigir éxito, fallo o un resultado concreto. Setup y cleanup permiten agregar datos defectuosos y retirarlos después. Crear ciclo y borrar ciclo comprueban la detección de dependencias circulares.
+>
+> Subconjunto genera las combinaciones de objetivos y ancestro obtiene las dependencias para contrastarlas. Verificar ruta revisa que estén las materias exactas, sin repetidos, con prerrequisitos anteriores y sin cruces. La última prueba evalúa los 1.024 subconjuntos para tres estudiantes: 3.072 rutas. Al ejecutar las pruebas comprobamos el comportamiento de ambos sistemas expertos.
