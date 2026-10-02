@@ -546,3 +546,87 @@ OK: flujo completo desde el catalogo hasta el ranking
 </details>
 
 Todas las pruebas produjeron el resultado esperado. La última prueba verifica el flujo completo desde la generación de combinaciones hasta la selección de los tres mejores horarios.
+
+## 12. Problemas encontrados y soluciones
+
+Durante el desarrollo se presentaron dificultades relacionadas principalmente con el sistema de tipos, las listas anidadas, la recursión y la organización modular.
+
+| Problema encontrado | Causa | Solución aplicada |
+|---|---|---|
+| Error al implementar `totalCreditos`. | Se intentó sumar un valor `Int` con la cola `cs`, cuyo tipo era `[Curso]`. | Se aplicó recursivamente `totalCreditos cs` para convertir la cola en un valor numérico. |
+| Dificultad para comprender `agregarATodas`. | La expresión utiliza un operador `:` para agregar un curso a una combinación y otro para agregar esa combinación al resultado. | Se diferenciaron los tipos `Curso`, `[Curso]` y `[[Curso]]` mediante ejemplos y trazas manuales. |
+| Confusión entre `[]` y `[[]]`. | `[]` representa ninguna combinación, mientras que `[[]]` representa una combinación vacía. | Se utilizó `[[]]` como caso base de `combinaciones`, permitiendo construir las demás combinaciones. |
+| Fallo potencial en `filtrarOpciones`. | Inicialmente solo se había definido la guarda para las opciones válidas. | Se añadió `otherwise` para descartar las opciones inválidas y continuar con el resto. |
+| Restricción de no utilizar `sort`. | Las opciones debían ordenarse por puntaje mediante un algoritmo propio. | Se implementó insertion sort con `insertarPorPuntaje` y `ordenarPorPuntaje`. |
+| Ciclo de importación entre módulos. | Los encabezados de `Main.hs` y `ProyectoHorario.hs` no coincidían correctamente con sus archivos. | Se definieron `module Main` y `module ProyectoHorario`, y se importó únicamente el segundo desde `Main`. |
+| Variables de prueba fuera de alcance. | Las pruebas se agregaron antes de definir los horarios, cursos, catálogo y prioridades en `Main.hs`. | Los datos de prueba se declararon antes de `main`, dentro del mismo módulo. |
+| Salida demasiado extensa. | `deriving Show` mostraba todos los campos de cada curso y horario. | Se crearon funciones recursivas de presentación para mostrar solamente nombres, créditos, posiciones y puntajes. |
+| Necesidad de verificar todo el flujo. | Las pruebas individuales no demostraban por sí solas la integración del sistema. | Se agregó una prueba desde el catálogo hasta la generación del ranking final. |
+
+## 13. Transparencia y uso de inteligencia artificial
+
+Durante el desarrollo se utilizó inteligencia artificial generativa como herramienta de orientación, explicación, revisión y apoyo técnico.
+
+### 13.1. Usos realizados
+
+La inteligencia artificial fue utilizada para:
+
+- Explicar conceptos de Haskell como tipos, listas, tuplas, reconocimiento de patrones y recursión.
+- Dividir los requisitos del proyecto en funciones más pequeñas.
+- Explicar la diferencia entre `Curso`, `[Curso]` y `[[Curso]]`.
+- Proponer firmas y estructuras iniciales para algunas funciones.
+- Completar fragmentos de código cuando los estudiantes lo solicitaron.
+- Explicar el algoritmo recursivo para generar combinaciones.
+- Orientar la implementación del ordenamiento por inserción.
+- Interpretar errores generados por GHC.
+- Proponer casos de prueba y datos para validar el sistema.
+- Organizar la separación entre `ProyectoHorario.hs` y `Main.hs`.
+- Mejorar la presentación de los resultados en la terminal.
+- Apoyar la estructura y redacción inicial de la documentación técnica.
+
+### 13.2. Participación de los estudiantes
+
+Los integrantes del equipo fueron responsables de:
+
+- Analizar el enunciado y sus restricciones.
+- Escribir e integrar el código en los archivos del proyecto.
+- Ejecutar cada prueba en el entorno local.
+- Revisar los resultados obtenidos.
+- Corregir problemas de nombres, módulos e indentación.
+- Adaptar los datos de prueba a las asignaturas seleccionadas.
+- Decidir la estructura final del programa.
+- Revisar y ajustar la documentación.
+- Comprender el funcionamiento de las funciones para su sustentación.
+
+La inteligencia artificial no forma parte de la ejecución del programa. El sistema desarrollado en Haskell funciona de manera local y determinista, sin realizar solicitudes a modelos externos.
+
+### 13.3. Resumen del apoyo recibido
+
+| Área | Apoyo de IA | Validación realizada |
+|---|---|---|
+| Conceptos de Haskell | Explicaciones y ejemplos. | Revisión y aplicación por los estudiantes. |
+| Recursión | Descomposición de casos base y recursivos. | Ejecución de las funciones con diferentes entradas. |
+| Implementación | Sugerencias y fragmentos solicitados. | Integración y compilación local. |
+| Depuración | Interpretación de mensajes de GHC. | Corrección y nueva ejecución del programa. |
+| Pruebas | Propuesta de casos normales y casos límite. | Doce pruebas funcionales con resultado `OK`. |
+| Documentación | Organización y borradores en Markdown. | Revisión y adaptación para el repositorio. |
+
+Todo el código y la documentación deben ser comprendidos y sustentados por los integrantes. El contenido generado con apoyo de IA fue revisado mediante compilación, pruebas y análisis de los resultados.
+
+## 14. Conclusiones de Haskell
+
+1. La recursión permite procesar listas y resolver problemas de búsqueda, filtrado, acumulación y ordenamiento sin depender de ciclos o variables mutables.
+
+2. El sistema de tipos de Haskell facilita la detección temprana de errores. Por ejemplo, permitió identificar la diferencia entre una lista de cursos y el valor entero producido por la suma de sus créditos.
+
+3. Dividir el sistema en funciones pequeñas facilitó el desarrollo y las pruebas. La generación de combinaciones, validación de horarios, puntuación y clasificación pudieron verificarse de forma independiente.
+
+4. El reconocimiento de patrones permitió representar de manera clara los casos base y recursivos de las listas, especialmente mediante las formas `[]` y `(x:xs)`.
+
+5. La generación de combinaciones tiene un crecimiento exponencial de `2^n`. Aunque esto limita su aplicación con catálogos grandes, resulta adecuado para el alcance académico y los datos utilizados en la práctica.
+
+6. El ordenamiento por inserción demostró que es posible construir un algoritmo de clasificación desde cero utilizando recursión. Aunque no es el método más eficiente para listas grandes, cumple las restricciones del proyecto y facilita la comprensión del proceso.
+
+7. La separación entre `ProyectoHorario.hs` y `Main.hs` permitió mantener la lógica funcional independiente de los datos, las pruebas y la presentación de resultados.
+
+8. Las pruebas automáticas y la prueba de integración permitieron comprobar que las funciones trabajan correctamente de forma individual y también como parte del flujo completo.
