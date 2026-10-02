@@ -14,5 +14,5 @@
 
 | Nombre completo | Correo institucional |
 |---|---|
-| Juan David Soto Garcés | jdsotog.eafit.edu.co |
+| Juan David Soto Garcés | jdsotog@eafit.edu.co |
 | Tomas Agudelo Macias | tagudelom3@eafit.brightspace.com |
