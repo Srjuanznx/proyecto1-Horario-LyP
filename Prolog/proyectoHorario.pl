@@ -1,10 +1,4 @@
-% Parte II: Sistema Experto de Horarios y Prerrequisitos en Prolog.
-% Cargar desde la raiz del repositorio: ['Prolog/proyectoHorario.pl'].
 :- ensure_loaded('datos.pl').
-
-% ================================================================
-% 1. Operaciones recursivas sobre listas
-% ================================================================
 
 pertenece(X, [X|_]).
 pertenece(X, [Y|Resto]) :-
@@ -27,13 +21,9 @@ sin_repetidos([X|Resto], Vistos, Unicos) :-
        sin_repetidos(Resto, [X|Vistos], Cola)
     ).
 
-% findall solo recoge hechos; las verificaciones y calculos son recursivos.
+% findall solo recoge hechos
 prerrequisitos_directos(Curso, Requisitos) :-
     findall(Pre, prerequisito(Curso, Pre), Requisitos).
-
-% ================================================================
-% 2.1. Sistema experto de elegibilidad de matricula
-% ================================================================
 
 % Comprueba todos los prerrequisitos directos, incluso si ya aprobo Curso.
 % La exclusion de cursos aprobados se realiza en cursos_disponibles/2.
@@ -91,10 +81,6 @@ filtrar_disponibles([Curso|Resto], Estudiante, Disponibles) :-
     ;  Disponibles = Cola
     ),
     filtrar_disponibles(Resto, Estudiante, Cola).
-
-% ================================================================
-% 2.2. Sistema experto de rutas academicas
-% ================================================================
 
 % Recorre los prerrequisitos en profundidad y elimina duplicados al final.
 % Visitados contiene la rama actual: repetir un curso indica un ciclo.

@@ -51,7 +51,7 @@ Archivos principales:
 
 ### 3. Videos de sustentación: 
 - Link Haskell:
-- Link Prolog: 
+- Link Prolog: https://drive.google.com/file/d/17yMW1tTnm4HkPcn32yWEth8DtjPJd4vx/view?usp=sharing
 
 ## 4. Comparación entre paradigmas
 
