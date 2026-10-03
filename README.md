@@ -50,7 +50,7 @@ Archivos principales:
 - [`pruebas.pl`](./Prolog/pruebas.pl): consultas y casos de prueba utilizados para verificar el funcionamiento de los predicados.
 
 ### 3. Videos de sustentación: 
-- Link Haskell:
+- Link Haskell: https://drive.google.com/file/d/1GGCfRBQJ6xNoOYR9pkvcltsbKSnmAJrT/view?usp=sharing
 - Link Prolog: https://drive.google.com/file/d/17yMW1tTnm4HkPcn32yWEth8DtjPJd4vx/view?usp=sharing
 
 ## 4. Comparación entre paradigmas
